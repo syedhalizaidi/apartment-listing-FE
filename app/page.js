@@ -124,7 +124,7 @@ export default function Home() {
               Why Choose Apartment Finder?
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              We've revolutionized apartment hunting in Japan with cutting-edge technology and comprehensive coverage.
+              We&apos;ve revolutionized apartment hunting in Japan with cutting-edge technology and comprehensive coverage.
             </p>
           </div>
           
@@ -154,7 +154,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Search Across Japan's Top Real Estate Sites
+              Search Across Japan&apos;s Top Real Estate Sites
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               We aggregate listings from all major Japanese rental platforms to give you the most comprehensive search experience.
