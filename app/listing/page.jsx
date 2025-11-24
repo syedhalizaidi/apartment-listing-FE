@@ -1,147 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import PremiumLoader from "../components/loader/index";
+
+const BASE_URL = "http://192.168.3.18:5000";
 
 export default function PropertyListings() {
-  const listings = [
-    {
-      id: 1,
-      price: 3450,
-      priceDiscount: 200,
-      address: "125 Lawrence St, Brooklyn, NY 11201",
-      beds: 2,
-      baths: 2,
-      sqft: 950,
-      petFriendly: true,
-      aiMatch: 96,
-      commuteTime: 18,
-      listingStatus: "NEW TODAY",
-      verified: true,
-      availableNow: true,
-      photoCount: 24,
-      virtualTour: true,
-      icon: "🏙️",
-      neighborhood: "Downtown Brooklyn",
-      amenities: ["Pool", "Gym", "Parking"],
-    },
-    {
-      id: 2,
-      price: 2850,
-      priceDiscount: 150,
-      address: "340 Jay St, Brooklyn, NY 11201",
-      beds: 1,
-      baths: 1,
-      sqft: 650,
-      petFriendly: true,
-      aiMatch: 92,
-      commuteTime: 15,
-      listingStatus: "NEW",
-      verified: true,
-      availableNow: true,
-      photoCount: 18,
-      virtualTour: true,
-      icon: "🌆",
-      neighborhood: "MetroTech",
-      amenities: ["Gym", "Rooftop", "Concierge"],
-    },
-    {
-      id: 3,
-      price: 4200,
-      priceDiscount: null,
-      address: "85 Fleet St, Brooklyn, NY 11201",
-      beds: 3,
-      baths: 2,
-      sqft: 1200,
-      petFriendly: true,
-      aiMatch: 89,
-      commuteTime: 22,
-      listingStatus: null,
-      verified: true,
-      availableNow: false,
-      photoCount: 32,
-      virtualTour: true,
-      icon: "🏢",
-      neighborhood: "DUMBO",
-      amenities: ["Pool", "Gym", "Terrace", "Parking"],
-    },
-    {
-      id: 4,
-      price: 3100,
-      priceDiscount: 100,
-      address: "180 Montague St, Brooklyn, NY 11201",
-      beds: 2,
-      baths: 1,
-      sqft: 850,
-      petFriendly: false,
-      aiMatch: 85,
-      commuteTime: 20,
-      listingStatus: "NEW TODAY",
-      verified: true,
-      availableNow: true,
-      photoCount: 20,
-      virtualTour: false,
-      icon: "🌃",
-      neighborhood: "Brooklyn Heights",
-      amenities: ["Gym", "Laundry", "Doorman"],
-    },
-    {
-      id: 5,
-      price: 5500,
-      priceDiscount: null,
-      address: "1 Brooklyn Bridge Park, Brooklyn, NY 11201",
-      beds: 3,
-      baths: 2.5,
-      sqft: 1500,
-      petFriendly: true,
-      aiMatch: 94,
-      commuteTime: 25,
-      listingStatus: null,
-      verified: true,
-      availableNow: true,
-      photoCount: 40,
-      virtualTour: true,
-      icon: "🌉",
-      neighborhood: "Brooklyn Bridge Park",
-      amenities: ["Pool", "Gym", "Spa", "Parking", "Concierge"],
-    },
-    {
-      id: 6,
-      price: 2650,
-      priceDiscount: 200,
-      address: "255 Adams St, Brooklyn, NY 11201",
-      beds: 1,
-      baths: 1,
-      sqft: 600,
-      petFriendly: true,
-      aiMatch: 88,
-      commuteTime: 16,
-      listingStatus: "NEW",
-      verified: false,
-      availableNow: true,
-      photoCount: 15,
-      virtualTour: false,
-      icon: "🏘️",
-      neighborhood: "Downtown Brooklyn",
-      amenities: ["Gym", "Laundry"],
-    },
-  ];
-
-  const company = {
-    name: "Brooklyn Premier Properties",
-    phone: "(555) 234-5678",
-    rating: 4.8,
-    reviewCount: 287,
-  };
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [listings, setListings] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [manualLoader, setManualLoader] = useState(true);
   const [filter, setFilter] = useState("all");
   const [sortBy, setSortBy] = useState("match");
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const res = await fetch(
+          `${BASE_URL}/web-api/listings?page=${currentPage}`
+        );
+        const data = await res.json();
+
+        setListings(data.listings || []);
+        setTotalPages(data.total_pages);
+        setTotal(data.total);
+      } catch (error) {
+        console.error("API Fetch Error:", error);
+      }
+    };
+
+    fetchListings();
+  }, [currentPage]);
 
   const filteredListings = listings
     .filter((listing) => {
       if (filter === "all") return true;
-      if (filter === "new") return listing.listingStatus;
-      if (filter === "pet") return listing.petFriendly;
+      if (filter === "new") return listing.listingStatus === "New Today";
       if (filter === "available") return listing.availableNow;
       return true;
     })
@@ -153,6 +48,34 @@ export default function PropertyListings() {
       return 0;
     });
 
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [currentPage]);
+
+  const itemsPerPage = 10;
+
+  const paginatedListings = filteredListings;
+
+  const goNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const goPrev = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const company = {
+    name: "Brooklyn Premier Properties",
+    phone: "(555) 234-5678",
+    rating: 4.8,
+    reviewCount: 287,
+  };
+  if (manualLoader) {
+    return <PremiumLoader onFinish={() => setManualLoader(false)} />;
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white px-4 sm:px-6 lg:px-10 py-3 md:py-4 shadow-md sticky top-0 z-50">
@@ -234,7 +157,7 @@ export default function PropertyListings() {
             >
               New Today
             </button>
-            <button
+            {/* <button
               onClick={() => setFilter("pet")}
               className={`px-3 py-2 md:px-4 md:py-2 rounded-lg font-medium transition whitespace-nowrap text-xs md:text-sm ${
                 filter === "pet"
@@ -243,7 +166,7 @@ export default function PropertyListings() {
               }`}
             >
               Pet Friendly
-            </button>
+            </button> */}
             <button
               onClick={() => setFilter("available")}
               className={`px-3 py-2 md:px-4 md:py-2 rounded-lg font-medium transition whitespace-nowrap text-xs md:text-sm ${
@@ -276,15 +199,18 @@ export default function PropertyListings() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
         <div className="flex flex-col gap-4 md:gap-6">
-          {filteredListings.map((listing) => (
+          {paginatedListings.map((listing) => (
             <div
               key={listing.id}
               className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden group flex flex-col md:flex-row"
             >
-              <div className="w-full md:w-96 lg:w-[400px] h-56 md:h-auto md:min-h-[320px] flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white relative overflow-hidden">
-                <div className="text-6xl md:text-7xl lg:text-8xl group-hover:scale-110 transition-transform duration-300">
-                  {listing.icon}
-                </div>
+              <div className="w-full md:w-96 lg:w-[400px] h-56 md:h-auto md:min-h-[320px] flex-shrink-0 relative overflow-hidden rounded-xl">
+                <img
+                  src={listing.image_urls?.[0]}
+                  alt={listing.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+
                 <div className="absolute top-3 left-3 md:top-4 md:left-4 flex flex-col gap-2">
                   {listing.verified && (
                     <div className="bg-green-500 text-white px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-xs font-semibold shadow-lg">
@@ -297,28 +223,23 @@ export default function PropertyListings() {
                     </div>
                   )}
                 </div>
-                <div className="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-4">
-                  <div className="flex justify-between items-center">
-                    <div className="bg-white/90 backdrop-blur-sm text-gray-900 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg text-xs font-bold">
-                      {listing.photoCount} Photos
-                    </div>
-                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg text-xs font-bold shadow-lg">
-                      ⚡ {listing.aiMatch}%
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="flex-1 p-4 md:p-6 flex flex-col">
                 <div className="flex justify-between items-start mb-3 md:mb-4">
                   <div className="flex-1">
+                    <div className="text-xl md:text-2xl font-bold text-black mb-1">
+                      {listing.title}
+                    </div>
+
                     <div className="flex flex-wrap items-baseline gap-2 mb-2">
                       <span className="text-3xl md:text-4xl font-bold text-black">
-                        ${listing.price.toLocaleString()}
+                        ${listing.price?.toLocaleString()}
                       </span>
                       <span className="text-lg md:text-xl text-gray-500">
                         /mo
                       </span>
+
                       {listing.priceDiscount && (
                         <span className="bg-green-50 text-green-600 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm font-semibold">
                           ${listing.priceDiscount} Off
@@ -357,7 +278,7 @@ export default function PropertyListings() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-3 md:mb-4">
-                  {listing.amenities.map((amenity, index) => (
+                  {listing.amenities?.map((amenity, index) => (
                     <span
                       key={index}
                       className="bg-gray-100 text-gray-700 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm font-medium"
@@ -386,7 +307,7 @@ export default function PropertyListings() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 md:gap-3 mt-auto">
-                  <Link href="/details" >
+                  <Link href={`/details/${listing.id}`}>
                     <button className="flex-1 bg-orange-500 text-white py-3 md:py-3.5 px-4 md:px-6 rounded-lg font-semibold text-sm md:text-base hover:bg-orange-600 transition shadow-lg shadow-orange-500/30">
                       View Details
                     </button>
@@ -414,6 +335,38 @@ export default function PropertyListings() {
             </button>
           </div>
         )}
+      </div>
+
+      <div className="flex justify-center items-center gap-4  ">
+        <button
+          onClick={goPrev}
+          disabled={currentPage === 1}
+          className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full shadow-lg transition-all duration-300 relative -top-[-6px]
+      ${
+        currentPage === 1
+          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+          : "bg-blue-500 text-white hover:bg-blue-600"
+      }`}
+        >
+          &#8592;
+        </button>
+
+        <div className="text-sm md:text-base font-semibold text-black">
+          Page {currentPage} of {totalPages}
+        </div>
+
+        <button
+          onClick={goNext}
+          disabled={currentPage === totalPages}
+          className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full shadow-lg transition-all duration-300 relative -top-[-5px]
+      ${
+        currentPage === totalPages
+          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+          : "bg-blue-500 text-white hover:bg-blue-600"
+      }`}
+        >
+          &#8594;
+        </button>
       </div>
 
       <div className="bg-white border-t border-gray-200 py-6 md:py-8">
