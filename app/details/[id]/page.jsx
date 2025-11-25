@@ -220,6 +220,45 @@ export default function PropertyListing() {
 
         <div className="px-4 md:px-10 py-6 md:py-8 flex flex-col md:flex-row justify-between gap-6 border-b border-gray-200">
           <div className="flex-1">
+            <div className="flex flex-row gap-3 items-stretch md:items-end w-full md:w-auto">
+              <button
+                onClick={goToNextProperty}
+                disabled={
+                  allListingIds.indexOf(listingId) === allListingIds.length - 1
+                }
+                className="bg-gray-100 text-black px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed md:hidden text-sm"
+              >
+                Prev
+              </button>
+              <button
+                onClick={goToPrevProperty}
+                disabled={
+                  allListingIds.indexOf(listingId) === allListingIds.length - 1
+                }
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed hidden md:block  -top-[23px] relative"
+              >
+                Prev Property
+              </button>
+
+              <button
+                onClick={goToPrevProperty}
+                disabled={allListingIds.indexOf(listingId) === 0}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed md:hidden text-sm relative left-[983px] -top-[23px]"
+              >
+                Next
+              </button>
+
+              <button
+                onClick={goToNextProperty}
+                disabled={allListingIds.indexOf(listingId) === 0}
+                className="px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed hidden md:block bg-blue-600 text-white"
+              >
+                Next Property
+              </button>
+              <div className="text-xs text-gray-500 text-center md:text-right">
+                ✓ Instant response • Available 24/7
+              </div>
+            </div>
             <div className="text-xl md:text-2xl font-bold mb-2">
               {data.property.name}
             </div>
@@ -265,51 +304,6 @@ export default function PropertyListing() {
               min commute
             </div>
           </div>
-
-          <div className="flex flex-col gap-3 items-stretch md:items-end w-full md:w-auto">
-            {/* Previous Property Button */}
-            {/* Next Property */}
-            <button
-              onClick={goToNextProperty}
-              disabled={
-                allListingIds.indexOf(listingId) === allListingIds.length - 1
-              } // last item par disable
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed hidden md:block"
-            >
-              Next Property
-            </button>
-
-            <button
-              onClick={goToNextProperty}
-              disabled={
-                allListingIds.indexOf(listingId) === allListingIds.length - 1
-              } // last item par disable
-              className="bg-gray-100 text-black px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed md:hidden text-sm"
-            >
-              Next
-            </button>
-
-            {/* Prev Property */}
-            <button
-              onClick={goToPrevProperty}
-              disabled={allListingIds.indexOf(listingId) === 0} // first item par disable
-              className="px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed hidden md:block"
-            >
-              Prev Property
-            </button>
-
-            <button
-              onClick={goToPrevProperty}
-              disabled={allListingIds.indexOf(listingId) === 0} // first item par disable
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed md:hidden text-sm"
-            >
-              Prev
-            </button>
-
-            <div className="text-xs text-gray-500 text-center md:text-right">
-              ✓ Instant response • Available 24/7
-            </div>
-          </div>
         </div>
       </div>
 
@@ -336,15 +330,10 @@ export default function PropertyListing() {
               ))}
             </div>
           </div>
-          {/* Similar Properties Section */}
-          {/* Similar Properties Section */}
-          {/* Similar Properties Section */}
           <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm mt-10 md:mt-14">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
               Similar Properties You May Like
             </h2>
-
-            {/* The Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {similarPropertiesToShow.map((prop, i) => {
                 const img =
@@ -356,7 +345,6 @@ export default function PropertyListing() {
                     key={i}
                     className="cursor-pointer bg-gray-50 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-transform duration-300 hover:-translate-y-1"
                   >
-                    {/* Image */}
                     <div className="w-full h-48 sm:h-56 md:h-60 lg:h-64 relative overflow-hidden">
                       <img
                         src={img}
@@ -364,8 +352,6 @@ export default function PropertyListing() {
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                       />
                     </div>
-
-                    {/* Content */}
                     <div className="p-4 md:p-5">
                       <div className="text-lg md:text-xl font-semibold text-gray-900 mb-1 line-clamp-1">
                         {prop.name}
