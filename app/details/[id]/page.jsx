@@ -220,45 +220,52 @@ export default function PropertyListing() {
 
         <div className="px-4 md:px-10 py-6 md:py-8 flex flex-col md:flex-row justify-between gap-6 border-b border-gray-200">
           <div className="flex-1">
-            <div className="flex flex-row gap-3 items-stretch md:items-end w-full md:w-auto">
-              <button
-                onClick={goToNextProperty}
-                disabled={
-                  allListingIds.indexOf(listingId) === allListingIds.length - 1
-                }
-                className="bg-gray-100 text-black px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed md:hidden text-sm"
-              >
-                Prev
-              </button>
+            <div className="flex flex-col md:flex-row md:items-end w-full md:w-auto gap-3">
+              {/* Mobile Buttons */}
+              <div className="flex justify-between md:hidden w-full">
+                <button
+                  onClick={goToPrevProperty}
+                  disabled={allListingIds.indexOf(listingId) === 0}
+                  className="bbg-gray-100 text-black px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={goToNextProperty}
+                  disabled={
+                    allListingIds.indexOf(listingId) ===
+                    allListingIds.length - 1
+                  }
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Next
+                </button>
+              </div>
+
+              {/* Desktop Buttons */}
               <button
                 onClick={goToPrevProperty}
-                disabled={
-                  allListingIds.indexOf(listingId) === allListingIds.length - 1
-                }
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed hidden md:block  -top-[23px] relative"
+                disabled={allListingIds.indexOf(listingId) === 0}
+                className="hidden md:block bg-gray-100 text-black px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed relative -top-[23px]-left-[-32px]"
               >
                 Prev Property
               </button>
 
               <button
-                onClick={goToPrevProperty}
-                disabled={allListingIds.indexOf(listingId) === 0}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed md:hidden text-sm relative left-[983px] -top-[23px]"
-              >
-                Next
-              </button>
-
-              <button
                 onClick={goToNextProperty}
-                disabled={allListingIds.indexOf(listingId) === 0}
-                className="px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed hidden md:block bg-blue-600 text-white"
+                disabled={
+                  allListingIds.indexOf(listingId) === allListingIds.length - 1
+                }
+                className="hidden md:block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed relative -top-[20px] left-[984px]"
               >
                 Next Property
               </button>
+
               <div className="text-xs text-gray-500 text-center md:text-right">
                 ✓ Instant response • Available 24/7
               </div>
             </div>
+
             <div className="text-xl md:text-2xl font-bold mb-2">
               {data.property.name}
             </div>
