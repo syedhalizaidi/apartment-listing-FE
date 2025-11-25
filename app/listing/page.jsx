@@ -81,9 +81,11 @@ export default function PropertyListings() {
       <header className="bg-white px-4 sm:px-6 lg:px-10 py-3 md:py-4 shadow-md sticky top-0 z-50">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3 md:gap-4">
-            <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-blue-900 to-blue-500 rounded-lg flex items-center justify-center text-lg md:text-xl">
-              🏢
-            </div>
+            <Link href="/">
+              <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-blue-900 to-blue-500 rounded-lg flex items-center justify-center text-lg md:text-xl cursor-pointer">
+                🏢
+              </div>
+            </Link>
             <div className="text-base md:text-lg font-bold text-black">
               {company.name}
             </div>
@@ -92,9 +94,9 @@ export default function PropertyListings() {
             <div className="text-xs md:text-sm text-gray-600 hidden md:block">
               {company.rating}★ ({company.reviewCount} reviews)
             </div>
-            <button className="bg-orange-500 text-white px-5 py-2 md:px-8 md:py-3 rounded-lg font-semibold text-sm md:text-base shadow-lg shadow-orange-500/30 hover:bg-orange-600 transition w-full sm:w-auto">
+            {/* <button className="bg-orange-500 text-white px-5 py-2 md:px-8 md:py-3 rounded-lg font-semibold text-sm md:text-base shadow-lg shadow-orange-500/30 hover:bg-orange-600 transition w-full sm:w-auto">
               Contact Us
-            </button>
+            </button> */}
           </div>
         </div>
       </header>
@@ -102,7 +104,7 @@ export default function PropertyListings() {
       <div className="bg-gradient-to-br from-blue-900 to-blue-500 text-white py-8 md:py-16 px-4 sm:px-6 lg:px-10">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 md:mb-4">
-            Find Your Perfect Brooklyn Home
+            Find Your Perfect Home
           </h1>
           <p className="text-base md:text-xl opacity-90 mb-4 md:mb-6">
             {filteredListings.length} Premium Properties Available
@@ -232,20 +234,22 @@ export default function PropertyListings() {
                       {listing.title}
                     </div>
 
-                    <div className="flex flex-wrap items-baseline gap-2 mb-2">
-                      <span className="text-3xl md:text-4xl font-bold text-black">
-                        ${listing.price?.toLocaleString()}
-                      </span>
-                      <span className="text-lg md:text-xl text-gray-500">
-                        /mo
-                      </span>
-
-                      {listing.priceDiscount && (
-                        <span className="bg-green-50 text-green-600 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm font-semibold">
-                          ${listing.priceDiscount} Off
+                    {listing.price > 0 && (
+                      <div className="flex flex-wrap items-baseline gap-2 mb-2">
+                        <span className="text-3xl md:text-4xl font-bold text-black">
+                          ${listing.price.toLocaleString()}
                         </span>
-                      )}
-                    </div>
+                        <span className="text-lg md:text-xl text-gray-500">
+                          /mo
+                        </span>
+
+                        {listing.priceDiscount > 0 && (
+                          <span className="bg-green-50 text-green-600 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm font-semibold">
+                            ${listing.priceDiscount} Off
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="text-sm md:text-base text-gray-600 mb-1">
                       {listing.address}
@@ -312,9 +316,9 @@ export default function PropertyListings() {
                       View Details
                     </button>
                   </Link>
-                  <button className="sm:flex-1 md:flex-initial bg-blue-500 text-white py-3 md:py-3.5 px-4 md:px-6 rounded-lg font-semibold text-sm md:text-base hover:bg-blue-600 transition whitespace-nowrap">
+                  {/* <button className="sm:flex-1 md:flex-initial bg-blue-500 text-white py-3 md:py-3.5 px-4 md:px-6 rounded-lg font-semibold text-sm md:text-base hover:bg-blue-600 transition whitespace-nowrap">
                     Schedule Tour
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
@@ -337,37 +341,71 @@ export default function PropertyListings() {
         )}
       </div>
 
-      <div className="flex justify-center items-center gap-4  ">
+      <div className="relative top-15px z-50 bg-white px-4 md:px-10 py-3 shadow-md flex justify-center items-center gap-4">
+         <button
+          onClick={goPrev}
+          disabled={currentPage === 1}
+          className={`px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed
+      ${
+        currentPage === 1
+          ? "bg-gray-200 text-gray-400"
+          : "bg-gray-100 text-black hover:bg-gray-200"
+      }
+      hidden md:block
+    `}
+        >
+           Prev Page
+        </button>
+
         <button
           onClick={goPrev}
           disabled={currentPage === 1}
-          className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full shadow-lg transition-all duration-300 relative -top-[-6px]
+          className={`px-4 py-2 rounded-lg font-semibold shadow-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed
       ${
         currentPage === 1
-          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-          : "bg-blue-500 text-white hover:bg-blue-600"
-      }`}
+          ? "bg-gray-200 text-gray-400"
+          : "bg-gray-100 text-black hover:bg-gray-200"
+      }
+      md:hidden
+    `}
         >
-          &#8592;
+           Prev
         </button>
 
         <div className="text-sm md:text-base font-semibold text-black">
           Page {currentPage} of {totalPages}
         </div>
+        <button
+          onClick={goNext}
+          disabled={currentPage === totalPages}
+          className={`px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed
+      ${
+        currentPage === totalPages
+          ? "bg-gray-200 text-gray-400"
+          : "bg-blue-600 text-white hover:bg-blue-700"
+      }
+      hidden md:block
+    `}
+        >
+          Next Page 
+        </button>
 
         <button
           onClick={goNext}
           disabled={currentPage === totalPages}
-          className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full shadow-lg transition-all duration-300 relative -top-[-5px]
+          className={`px-4 py-2 rounded-lg font-semibold shadow-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed
       ${
         currentPage === totalPages
-          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-          : "bg-blue-500 text-white hover:bg-blue-600"
-      }`}
+          ? "bg-gray-200 text-gray-400"
+          : "bg-blue-600 text-white hover:bg-blue-700"
+      }
+      md:hidden
+    `}
         >
-          &#8594;
+          Next 
         </button>
       </div>
+      
 
       <div className="bg-white border-t border-gray-200 py-6 md:py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 flex flex-col md:flex-row justify-between items-center gap-4">

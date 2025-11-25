@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 import { useParams } from "next/navigation";
 import PremiumLoader from "../../components/loader/index";
+import Link from "next/link";
 
 const BASE_URL = "http://192.168.3.18:5000";
 export default function PropertyListing() {
@@ -14,6 +17,80 @@ export default function PropertyListing() {
   const [manualLoader, setManualLoader] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const images = data?.property?.images || [];
+  const [allListingIds, setAllListingIds] = useState([]);
+  const [similarPropertiesFull, setSimilarPropertiesFull] = useState([]);
+  const [similarPropertiesToShow, setSimilarPropertiesToShow] = useState([]);
+
+  const router = useRouter();
+  useEffect(() => {
+    if (!allListingIds.length || !listingId) return;
+
+    const fetchSimilar = async () => {
+      try {
+        // Current listing exclude
+        const otherIds = allListingIds.filter((id) => id !== listingId);
+
+        // 7 random IDs
+        const shuffled = otherIds.sort(() => 0.5 - Math.random());
+        const selectedIds = shuffled.slice(0, 7);
+
+        const promises = selectedIds.map(async (id) => {
+          const res = await fetch(`${BASE_URL}/web-api/read-listing/${id}`);
+          const json = await res.json();
+          const listing = json.listing;
+          return {
+            id: listing.id,
+            name: listing.title || listing.property_name || "Unknown Property",
+            price: listing.price_yen_max || 0,
+            beds: listing.floor_plan?.beds || 0,
+            baths: listing.floor_plan?.baths || 0,
+            address: listing.address || listing.location || "",
+            images: listing.image_urls || [],
+          };
+        });
+
+        const results = await Promise.all(promises);
+        setSimilarPropertiesFull(results);
+
+        // Randomly pick 2–3 to show
+        const toShow = results.sort(() => 0.5 - Math.random()).slice(0, 3);
+        setSimilarPropertiesToShow(toShow);
+      } catch (err) {
+        console.error("Failed to load similar properties:", err);
+      }
+    };
+
+    fetchSimilar();
+  }, [allListingIds, listingId]);
+  useEffect(() => {
+    const fetchAllIds = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/web-api/listings`);
+        const json = await res.json();
+
+        const ids = json.listings.map((i) => i.id);
+        setAllListingIds(ids);
+      } catch (err) {
+        console.log("Failed to load listing IDs", err);
+      }
+    };
+
+    fetchAllIds();
+  }, []);
+  const goToNextProperty = () => {
+    const index = allListingIds.indexOf(listingId);
+    if (index >= 0 && index < allListingIds.length - 1) {
+      router.push(`/details/${allListingIds[index + 1]}`);
+    }
+  };
+
+  const goToPrevProperty = () => {
+    const index = allListingIds.indexOf(listingId);
+    if (index > 0) {
+      router.push(`/details/${allListingIds[index - 1]}`);
+    }
+  };
+
   const nextImage = () => {
     setCurrentIndex((prevIndex) =>
       prevIndex === images.length - 1 ? 0 : prevIndex + 1
@@ -40,7 +117,6 @@ export default function PropertyListing() {
 
         const mappedData = {
           property: {
-            // Prefer listing.title first, then listing.property_name, then company name
             name: listing.title || listing.property_name || "Unknown Property",
             price: listing.price_yen_max || 0,
             priceDiscount: 0,
@@ -58,8 +134,7 @@ export default function PropertyListing() {
             description: listing.extras?.description || "",
           },
           company: {
-            // Only company info here, no duplicate name
-            name: listing.company?.name || "Brooklyn Premier Properties",
+            name: listing.company?.name || " Premier Properties",
             phone: listing.company?.phone || "(555) 234-5678",
             rating: listing.company?.rating || 4.8,
             reviewCount: listing.company?.reviewCount || 287,
@@ -98,24 +173,16 @@ export default function PropertyListing() {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="bg-white px-4 md:px-10 py-3 shadow-md sticky top-0 z-50 flex justify-between items-center">
         <div className="flex items-center gap-3 md:gap-4">
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-900 to-blue-500 rounded-lg flex items-center justify-center text-lg md:text-xl">
-            🏢
-          </div>
-
+          <Link href="/">
+            <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-blue-900 to-blue-500 rounded-lg flex items-center justify-center text-lg md:text-xl cursor-pointer">
+              🏢
+            </div>
+          </Link>
           <div className="text-sm md:text-lg font-bold">
             {data.company.name}
           </div>
         </div>
-
-        <button className="hidden md:block bg-orange-500 text-white px-6 py-2 rounded-lg font-semibold shadow-lg hover:bg-orange-600 transition">
-          Schedule Tour
-        </button>
-
-        <button className="md:hidden bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold shadow-lg hover:bg-orange-600 transition text-sm">
-          Tour
-        </button>
       </header>
-
       <div className="bg-white">
         <div className="relative w-full h-64 md:h-[600px] flex items-center justify-center bg-gray-200 overflow-hidden">
           {images.length > 0 ? (
@@ -156,16 +223,20 @@ export default function PropertyListing() {
             <div className="text-xl md:text-2xl font-bold mb-2">
               {data.property.name}
             </div>
-            <div className="flex flex-wrap items-baseline gap-3 mb-3">
-              <span className="text-3xl md:text-5xl font-bold">
-                ${data.property.price.toLocaleString()}
-              </span>
-              <span className="text-lg text-gray-500">/month</span>
+            {data.property.price > 0 && (
+              <div className="flex flex-wrap items-baseline gap-3 mb-3">
+                <span className="text-3xl md:text-5xl font-bold">
+                  ${data.property.price.toLocaleString()}
+                </span>
+                <span className="text-lg text-gray-500">/month</span>
 
-              <span className="bg-green-50 text-green-600 px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm font-semibold">
-                ${data.property.priceDiscount} Off First Month
-              </span>
-            </div>
+                {data.property.priceDiscount > 0 && (
+                  <span className="bg-green-50 text-green-600 px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm font-semibold">
+                    ${data.property.priceDiscount} Off First Month
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="text-sm md:text-lg text-gray-500 mb-4">
               {data.property.address}
@@ -196,12 +267,43 @@ export default function PropertyListing() {
           </div>
 
           <div className="flex flex-col gap-3 items-stretch md:items-end w-full md:w-auto">
-            <button className="w-full md:w-auto bg-orange-500 text-white px-5 py-3 rounded-xl font-bold text-base md:text-lg shadow-xl hover:bg-orange-600 transition">
-              Schedule Tour Today
+            {/* Previous Property Button */}
+            {/* Next Property */}
+            <button
+              onClick={goToNextProperty}
+              disabled={
+                allListingIds.indexOf(listingId) === allListingIds.length - 1
+              } // last item par disable
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed hidden md:block"
+            >
+              Next Property
             </button>
 
-            <button className="w-full md:w-auto bg-white text-blue-500 px-5 py-3 rounded-xl font-semibold text-sm md:text-base border-2 border-blue-500 hover:bg-blue-50 transition">
-              💬 Text Us
+            <button
+              onClick={goToNextProperty}
+              disabled={
+                allListingIds.indexOf(listingId) === allListingIds.length - 1
+              } // last item par disable
+              className="bg-gray-100 text-black px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed md:hidden text-sm"
+            >
+              Next
+            </button>
+
+            {/* Prev Property */}
+            <button
+              onClick={goToPrevProperty}
+              disabled={allListingIds.indexOf(listingId) === 0} // first item par disable
+              className="px-6 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed hidden md:block"
+            >
+              Prev Property
+            </button>
+
+            <button
+              onClick={goToPrevProperty}
+              disabled={allListingIds.indexOf(listingId) === 0} // first item par disable
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed md:hidden text-sm"
+            >
+              Prev
             </button>
 
             <div className="text-xs text-gray-500 text-center md:text-right">
@@ -232,6 +334,62 @@ export default function PropertyListing() {
                   <div className="text-sm md:text-base">{item.text}</div>
                 </div>
               ))}
+            </div>
+          </div>
+          {/* Similar Properties Section */}
+          {/* Similar Properties Section */}
+          {/* Similar Properties Section */}
+          <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm mt-10 md:mt-14">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
+              Similar Properties You May Like
+            </h2>
+
+            {/* The Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {similarPropertiesToShow.map((prop, i) => {
+                const img =
+                  prop.images[0] ||
+                  "https://source.unsplash.com/400x300/?house";
+
+                return (
+                  <div
+                    key={i}
+                    className="cursor-pointer bg-gray-50 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-transform duration-300 hover:-translate-y-1"
+                  >
+                    {/* Image */}
+                    <div className="w-full h-48 sm:h-56 md:h-60 lg:h-64 relative overflow-hidden">
+                      <img
+                        src={img}
+                        alt={prop.name}
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4 md:p-5">
+                      <div className="text-lg md:text-xl font-semibold text-gray-900 mb-1 line-clamp-1">
+                        {prop.name}
+                      </div>
+
+                      <div className="text-gray-500 text-sm md:text-base mb-3 line-clamp-1">
+                        {prop.address}
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm md:text-base text-gray-700">
+                        <span className="flex items-center gap-1">
+                          🛏 {prop.beds} beds
+                        </span>
+                        <span className="flex items-center gap-1">
+                          🚿 {prop.baths} baths
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                          ${prop.price.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
