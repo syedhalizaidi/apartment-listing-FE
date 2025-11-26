@@ -24,16 +24,30 @@ const parseImages = (imagesData) => {
         } catch (e) {
           const cleaned = item.trim();
           if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+            // Parse Python-style string array - URLs can contain commas, so use regex
             const inner = cleaned.slice(1, -1);
-            const urls = inner.split(',').map(url => {
-              const trimmed = url.trim();
-              return trimmed.replace(/^['"]|['"]$/g, '');
-            }).filter(url => url.startsWith('http://') || url.startsWith('https://'));
-            if (urls.length > 0) {
-              allUrls.push(...urls);
+            
+            // Use regex to extract full URLs (handles commas within URLs)
+            // Match http:// or https:// followed by characters until we hit a quote or end
+            const urlPattern = /https?:\/\/[^\s'"]+/g;
+            const urls = inner.match(urlPattern);
+            
+            if (urls && urls.length > 0) {
+              // Clean up any remaining quotes and whitespace
+              const cleanedUrls = urls.map(url => {
+                let cleaned = url.trim();
+                cleaned = cleaned.replace(/^['"]+|['"]+$/g, '');
+                return cleaned;
+              }).filter(url => url.startsWith('http://') || url.startsWith('https://'));
+              
+              if (cleanedUrls.length > 0) {
+                allUrls.push(...cleanedUrls);
+              }
             }
           } else {
-            const urlMatches = item.match(/https?:\/\/[^\s'",\[\]]+/g);
+            // Not a Python array, try to extract URLs directly
+            const urlPattern = /https?:\/\/[^'"]+/g;
+            const urlMatches = item.match(urlPattern);
             if (urlMatches && urlMatches.length > 0) {
               allUrls.push(...urlMatches);
             } else if (item.startsWith('http://') || item.startsWith('https://')) {
@@ -53,16 +67,9 @@ const parseImages = (imagesData) => {
       const parsed = JSON.parse(imagesData);
       return Array.isArray(parsed) ? parsed : [imagesData];
     } catch (e) {
-      const cleaned = imagesData.trim();
-      if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
-        const inner = cleaned.slice(1, -1);
-        const urls = inner.split(',').map(url => {
-          const trimmed = url.trim();
-          return trimmed.replace(/^['"]|['"]$/g, '');
-        }).filter(url => url.startsWith('http://') || url.startsWith('https://'));
-        if (urls.length > 0) return urls;
-      }
-      const urlMatches = imagesData.match(/https?:\/\/[^\s'",\[\]]+/g);
+      // Extract URLs using regex (handles commas in URLs)
+      const urlPattern = /https?:\/\/[^'"]+/g;
+      const urlMatches = imagesData.match(urlPattern);
       return urlMatches || [];
     }
   }
@@ -110,7 +117,7 @@ export default function PropertyListing() {
         const ids = listingsArray.map((i) => i.id);
         setAllListingIds(ids);
       } catch (err) {
-        console.error("Failed to load listing IDs", err);
+        // Silently fail - similar properties will just not load
       }
     };
     fetchAllIds();
@@ -143,7 +150,6 @@ export default function PropertyListing() {
               images: images,
             };
           } catch (err) {
-            console.error(`Failed to load similar property ${id}:`, err);
             return null;
           }
         });
@@ -151,7 +157,7 @@ export default function PropertyListing() {
         const results = (await Promise.all(promises)).filter(Boolean);
         setSimilarPropertiesToShow(results);
       } catch (err) {
-        console.error("Failed to load similar properties:", err);
+        // Silently fail - similar properties section will just be empty
       } finally {
         setLoadingSimilar(false);
       }
@@ -213,7 +219,6 @@ export default function PropertyListing() {
 
         setData(mappedData);
       } catch (error) {
-        console.error("Failed to fetch listing:", error);
         setError(error.message || "Failed to load listing. Please try again.");
       } finally {
         setLoading(false);
@@ -316,12 +321,23 @@ export default function PropertyListing() {
           {images.length > 0 ? (
             <>
               <img
-                src={currentImage}
-                alt={data.property.name}
+                src={(() => {
+                  if (!currentImage || currentImage.includes('unsplash')) return currentImage;
+                  // Add cache buster with listing ID
+                  const separator = currentImage.includes('?') ? '&' : '?';
+                  return `${currentImage}${separator}_main=${listingId?.substring(0, 8)}`;
+                })()}
+                alt={`${data.property.name} - Image ${currentIndex + 1}`}
                 className="w-full h-full object-cover"
                 loading="eager"
+                key={`main-img-${listingId}-${currentIndex}-${images[currentIndex]?.substring(0, 30) || 'default'}`}
                 onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&h=800&fit=crop';
+                  const originalUrl = images[currentIndex];
+                  if (originalUrl && !e.target.src.includes('unsplash')) {
+                    e.target.src = originalUrl;
+                  } else {
+                    e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&h=800&fit=crop';
+                  }
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -496,12 +512,23 @@ export default function PropertyListing() {
                       >
                         <div className="w-full h-48 md:h-56 relative overflow-hidden bg-gray-200">
                           <img
-                            src={img}
-                            alt={prop.name}
+                            src={(() => {
+                              if (!img || img.includes('unsplash')) return img;
+                              // Add cache buster with property ID to ensure unique URLs
+                              const separator = img.includes('?') ? '&' : '?';
+                              return `${img}${separator}_prop=${prop.id.substring(0, 8)}`;
+                            })()}
+                            alt={`${prop.name} - Property Image`}
                             className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                             loading="lazy"
+                            key={`similar-img-${prop.id}-${prop.images?.[0]?.substring(0, 30) || 'default'}`}
                             onError={(e) => {
-                              e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&h=400&fit=crop';
+                              const originalUrl = prop.images?.[0];
+                              if (originalUrl && !e.target.src.includes('unsplash')) {
+                                e.target.src = originalUrl;
+                              } else {
+                                e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&h=400&fit=crop';
+                              }
                             }}
                           />
                         </div>

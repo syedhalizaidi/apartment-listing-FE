@@ -69,16 +69,34 @@ export default function PropertyListings() {
                 } catch (e) {
                   const cleaned = item.trim();
                   if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+                    // Parse Python-style string array
+                    // URLs can contain commas, so we need to match URLs properly
                     const inner = cleaned.slice(1, -1);
-                    const urls = inner.split(',').map(url => {
-                      const trimmed = url.trim();
-                      return trimmed.replace(/^['"]|['"]$/g, '');
-                    }).filter(url => url.startsWith('http://') || url.startsWith('https://'));
-                    if (urls.length > 0) {
-                      allUrls.push(...urls);
+                    
+                    // Match URLs: http:// or https:// followed by characters until quote, space, or end
+                    // This handles commas within URLs (like in query params)
+                    const urlPattern = /https?:\/\/[^'"]+/g;
+                    const urls = inner.match(urlPattern);
+                    
+                    if (urls && urls.length > 0) {
+                      // Clean up any remaining quotes and whitespace
+                      const cleanedUrls = urls.map(url => {
+                        let cleaned = url.trim();
+                        // Remove quotes from start/end if present
+                        cleaned = cleaned.replace(/^['"]+|['"]+$/g, '');
+                        // Remove trailing commas if any
+                        cleaned = cleaned.replace(/,\s*$/, '');
+                        return cleaned;
+                      }).filter(url => url.startsWith('http://') || url.startsWith('https://'));
+                      
+                      if (cleanedUrls.length > 0) {
+                        allUrls.push(...cleanedUrls);
+                      }
                     }
                   } else {
-                    const urlMatches = item.match(/https?:\/\/[^\s'",\[\]]+/g);
+                    // Not a Python array, try to extract URLs directly
+                    const urlPattern = /https?:\/\/[^'"]+/g;
+                    const urlMatches = item.match(urlPattern);
                     if (urlMatches && urlMatches.length > 0) {
                       allUrls.push(...urlMatches);
                     } else if (item.startsWith('http://') || item.startsWith('https://')) {
@@ -98,7 +116,9 @@ export default function PropertyListings() {
               const parsed = JSON.parse(imagesData);
               return Array.isArray(parsed) ? parsed : [imagesData];
             } catch (e) {
-              const urlMatches = imagesData.match(/https?:\/\/[^\s'",\[\]]+/g);
+              // Extract URLs using regex (handles commas in URLs)
+              const urlPattern = /https?:\/\/[^'"]+/g;
+              const urlMatches = imagesData.match(urlPattern);
               return urlMatches || [];
             }
           }
@@ -135,11 +155,11 @@ export default function PropertyListings() {
           };
         });
 
+
         setListings(mappedListings);
         setTotalPages(1);
         setTotal(mappedListings.length);
       } catch (error) {
-        console.error("API Fetch Error:", error);
         setError(error.message || "Failed to load listings. Please try again.");
       } finally {
         setLoading(false);
@@ -349,12 +369,24 @@ export default function PropertyListings() {
                 <Link href={`/details/${listing.id}`} className="flex flex-col md:flex-row">
                   <div className="w-full md:w-96 lg:w-[400px] h-64 md:h-auto md:min-h-[320px] flex-shrink-0 relative overflow-hidden bg-gray-100">
                     <img
-                      src={listing.image_urls?.[0] || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop'}
-                      alt={listing.title}
+                      src={(() => {
+                        const imgUrl = listing.image_urls?.[0];
+                        if (!imgUrl) return 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop';
+                        // Add cache buster with listing ID to ensure unique URLs
+                        const separator = imgUrl.includes('?') ? '&' : '?';
+                        return `${imgUrl}${separator}_listing=${listing.id.substring(0, 8)}`;
+                      })()}
+                      alt={`${listing.title} - Property Image`}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       loading="lazy"
+                      key={`img-${listing.id}-${listing.image_urls?.[0]?.substring(0, 30) || 'default'}-${listing.image_urls?.length || 0}`}
                       onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop';
+                        const originalUrl = listing.image_urls?.[0];
+                        if (originalUrl && !e.target.src.includes('unsplash')) {
+                          e.target.src = originalUrl;
+                        } else {
+                          e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop';
+                        }
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
