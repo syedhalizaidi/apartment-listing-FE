@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import PremiumLoader from "../components/loader/index";
-
-const BASE_URL = "http://192.168.3.18:5000";
+import { BASE_URL } from "../constants/constants";
 
 export default function PropertyListings() {
   const [currentPage, setCurrentPage] = useState(1);

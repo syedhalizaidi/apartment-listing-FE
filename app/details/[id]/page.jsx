@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
 import { useParams } from "next/navigation";
 import PremiumLoader from "../../components/loader/index";
 import Link from "next/link";
+import { BASE_URL } from "../../constants/constants";
 
-const BASE_URL = "http://192.168.3.18:5000";
 export default function PropertyListing() {
   const params = useParams();
   const listingId = params?.id;
@@ -189,9 +188,8 @@ export default function PropertyListing() {
             images.map((img, index) => (
               <div
                 key={index}
-                className={`absolute w-full h-full bg-center bg-contain bg-no-repeat transition-opacity duration-700 ${
-                  index === currentIndex ? "opacity-100" : "opacity-0"
-                }`}
+                className={`absolute w-full h-full bg-center bg-contain bg-no-repeat transition-opacity duration-700 ${index === currentIndex ? "opacity-100" : "opacity-0"
+                  }`}
                 style={{ backgroundImage: `url(${img})` }}
               />
             ))
@@ -261,7 +259,7 @@ export default function PropertyListing() {
                 Next Property
               </button>
 
-              <div class="text-xs text-gray-500 text-center mt-2 md:text-right md:relative md:-left-[787px]">
+              <div className="text-xs text-gray-500 text-center mt-2 md:text-right md:relative md:-left-[787px]">
                 ✓ Instant response • Available 24/7
               </div>
             </div>
@@ -350,6 +348,7 @@ export default function PropertyListing() {
                 return (
                   <div
                     key={i}
+                    onClick={() => router.push(`/details/${prop.id}`)}
                     className="cursor-pointer bg-gray-50 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-transform duration-300 hover:-translate-y-1"
                   >
                     <div className="w-full h-48 sm:h-56 md:h-60 lg:h-64 relative overflow-hidden">
