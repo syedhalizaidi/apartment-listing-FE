@@ -261,7 +261,7 @@ export default function PropertyListing() {
                 Next Property
               </button>
 
-              <div className="text-xs text-gray-500 text-center md:text-right">
+              <div class="text-xs text-gray-500 text-center mt-2 md:text-right md:relative md:-left-[787px]">
                 ✓ Instant response • Available 24/7
               </div>
             </div>
