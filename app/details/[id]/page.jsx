@@ -589,15 +589,6 @@ export default function PropertyListing() {
                     Via public transit
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
-                  <div className="text-blue-600 font-bold mb-1">True Cost</div>
-                  <div className="text-3xl font-bold">
-                    ${(data.property.price + 245).toLocaleString()}
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    Rent + utilities + parking
-                  </div>
-                </div>
                 {data.property.aiMatch > 0 && (
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
                     <div className="text-blue-600 font-bold mb-1">
