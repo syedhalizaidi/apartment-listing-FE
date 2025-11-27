@@ -6,14 +6,13 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BASE_URL } from "../../constants/constants";
 
-// Helper function to parse images
 const parseImages = (imagesData) => {
   if (!imagesData) return [];
-  
+
   if (Array.isArray(imagesData)) {
     const allUrls = [];
     imagesData.forEach((item) => {
-      if (typeof item === 'string') {
+      if (typeof item === "string") {
         try {
           const parsed = JSON.parse(item);
           if (Array.isArray(parsed)) {
@@ -23,66 +22,137 @@ const parseImages = (imagesData) => {
           }
         } catch (e) {
           const cleaned = item.trim();
-          if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
-            // Parse Python-style string array - URLs can contain commas, so use regex
+          if (cleaned.startsWith("[") && cleaned.endsWith("]")) {
             const inner = cleaned.slice(1, -1);
-            
-            // Use regex to extract full URLs (handles commas within URLs)
-            // Match http:// or https:// followed by characters until we hit a quote or end
             const urlPattern = /https?:\/\/[^\s'"]+/g;
             const urls = inner.match(urlPattern);
-            
+
             if (urls && urls.length > 0) {
-              // Clean up any remaining quotes and whitespace
-              const cleanedUrls = urls.map(url => {
-                let cleaned = url.trim();
-                cleaned = cleaned.replace(/^['"]+|['"]+$/g, '');
-                return cleaned;
-              }).filter(url => url.startsWith('http://') || url.startsWith('https://'));
-              
+              const cleanedUrls = urls
+                .map((url) => {
+                  let cleaned = url.trim();
+                  cleaned = cleaned.replace(/^['"]+|['"]+$/g, "");
+                  return cleaned;
+                })
+                .filter(
+                  (url) =>
+                    url.startsWith("http://") || url.startsWith("https://")
+                );
+
               if (cleanedUrls.length > 0) {
                 allUrls.push(...cleanedUrls);
               }
             }
           } else {
-            // Not a Python array, try to extract URLs directly
             const urlPattern = /https?:\/\/[^'"]+/g;
             const urlMatches = item.match(urlPattern);
             if (urlMatches && urlMatches.length > 0) {
               allUrls.push(...urlMatches);
-            } else if (item.startsWith('http://') || item.startsWith('https://')) {
+            } else if (
+              item.startsWith("http://") ||
+              item.startsWith("https://")
+            ) {
               allUrls.push(item);
             }
           }
         }
-      } else if (typeof item === 'object' && item !== null) {
+      } else if (typeof item === "object" && item !== null) {
         allUrls.push(item);
       }
     });
     return allUrls;
   }
-  
-  if (typeof imagesData === 'string') {
+
+  if (typeof imagesData === "string") {
     try {
       const parsed = JSON.parse(imagesData);
       return Array.isArray(parsed) ? parsed : [imagesData];
     } catch (e) {
-      // Extract URLs using regex (handles commas in URLs)
       const urlPattern = /https?:\/\/[^'"]+/g;
       const urlMatches = imagesData.match(urlPattern);
       return urlMatches || [];
     }
   }
-  
+
   return [];
 };
 
-// Loading Skeleton
+const REQUIRED_AMENITIES = [
+  "parking",
+  "garden",
+  "wifi",
+  "security",
+  "heating",
+  "cooling",
+];
+
+const getAmenityEmoji = (amenity) => {
+  const a = amenity.toLowerCase();
+
+  if (a.includes("pool")) return "🏊";
+  if (a.includes("fitness") || a.includes("gym")) return "💪";
+  if (a.includes("parking") || a.includes("garage")) return "🚗";
+  if (a.includes("concierge") || a.includes("doorman")) return "👨‍💼";
+  if (a.includes("pet")) return "🐾";
+  if (a.includes("garden") || a.includes("terrace")) return "🌳";
+  if (a.includes("laundry") || a.includes("washer")) return "🧺";
+  if (a.includes("air") || a.includes("ac") || a.includes("cooling"))
+    return "❄️";
+  if (a.includes("heat") || a.includes("heating")) return "🔥";
+  if (a.includes("elevator")) return "🛗";
+  if (a.includes("balcony") || a.includes("patio")) return "🏡";
+  if (a.includes("dishwasher")) return "🍽️";
+  if (a.includes("storage")) return "📦";
+  if (a.includes("security") || a.includes("alarm")) return "🔒";
+  if (a.includes("wifi") || a.includes("internet")) return "📶";
+
+  return "✨";
+};
+
+// Always show these items — even if missing from API
+export const fixedAmenities = [
+  { name: "Parking", emoji: "🚗" },
+  { name: "Garden", emoji: "🌳" },
+  { name: "Wifi", emoji: "📶" },
+  { name: "Security", emoji: "🔒" },
+  { name: "Heating", emoji: "🔥" },
+  { name: "Cooling", emoji: "❄️" },
+];
+
+const renderAmenities = (amenities = []) => {
+  const normalizedAmenities = amenities.map((a) => a.toLowerCase());
+
+  // Start with the required ones
+  const allAmenities = [
+    ...new Set([...normalizedAmenities, ...REQUIRED_AMENITIES]),
+  ];
+
+  return allAmenities.map((amenity) => ({
+    name: amenity.charAt(0).toUpperCase() + amenity.slice(1),
+    emoji: getAmenityEmoji(amenity),
+  }));
+};
+
+const getTimeSinceListed = (timestamp) => {
+  if (!timestamp) return "Recently";
+
+  const now = new Date();
+  const listed = new Date(timestamp);
+  const diffMs = now - listed;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return `${Math.floor(diffDays / 30)} months ago`;
+};
+
 const DetailSkeleton = () => (
   <div className="min-h-screen bg-gray-50">
     <div className="bg-white">
-      <div className="w-full h-64 md:h-[600px] bg-gray-200 animate-pulse" />
-      <div className="max-w-7xl mx-auto px-4 md:px-10 py-8">
+      <div className="w-full h-[600px] bg-gray-200 animate-pulse" />
+      <div className="max-w-7xl mx-auto px-10 py-8">
         <div className="h-8 bg-gray-200 rounded w-3/4 mb-4 animate-pulse" />
         <div className="h-12 bg-gray-200 rounded w-1/2 mb-4 animate-pulse" />
         <div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse" />
@@ -103,27 +173,25 @@ export default function PropertyListing() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [allListingIds, setAllListingIds] = useState([]);
   const [similarPropertiesToShow, setSimilarPropertiesToShow] = useState([]);
-  const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [loadingSimilar, setLoadingSimilar] = useState(true);
 
   const images = data?.property?.images || [];
 
-  // Fetch all listing IDs for navigation
   useEffect(() => {
     const fetchAllIds = async () => {
       try {
         const res = await fetch(`${BASE_URL}/api/v1/listings/all`);
         const data = await res.json();
-        const listingsArray = Array.isArray(data) ? data : (data.listings || []);
+        const listingsArray = Array.isArray(data) ? data : data.listings || [];
         const ids = listingsArray.map((i) => i.id);
         setAllListingIds(ids);
       } catch (err) {
-        // Silently fail - similar properties will just not load
+        console.error(err);
       }
     };
     fetchAllIds();
   }, []);
 
-  // Fetch similar properties
   useEffect(() => {
     if (!allListingIds.length || !listingId || !data) return;
 
@@ -136,10 +204,12 @@ export default function PropertyListing() {
 
         const promises = selectedIds.map(async (id) => {
           try {
-            const res = await fetch(`${BASE_URL}/api/v1/listings/details/${id}`);
+            const res = await fetch(
+              `${BASE_URL}/api/v1/listings/details/${id}`
+            );
             const listing = await res.json();
             const images = parseImages(listing.images);
-            
+
             return {
               id: listing.id,
               name: listing.title || "Unknown Property",
@@ -157,7 +227,7 @@ export default function PropertyListing() {
         const results = (await Promise.all(promises)).filter(Boolean);
         setSimilarPropertiesToShow(results);
       } catch (err) {
-        // Silently fail - similar properties section will just be empty
+        console.error(err);
       } finally {
         setLoadingSimilar(false);
       }
@@ -166,7 +236,6 @@ export default function PropertyListing() {
     fetchSimilar();
   }, [allListingIds, listingId, data]);
 
-  // Fetch main listing
   useEffect(() => {
     if (!listingId) return;
 
@@ -174,11 +243,14 @@ export default function PropertyListing() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${BASE_URL}/api/v1/listings/details/${listingId}`, {
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
+        const res = await fetch(
+          `${BASE_URL}/api/v1/listings/details/${listingId}`,
+          {
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
 
         if (!res.ok) {
           throw new Error(`Failed to fetch listing: ${res.status}`);
@@ -187,33 +259,51 @@ export default function PropertyListing() {
         const listing = await res.json();
         const images = parseImages(listing.images);
 
+        // Generate consistent random numbers based on listing ID
+        const generateSeed = (str) => {
+          let hash = 0;
+          for (let i = 0; i < str.length; i++) {
+            hash = (hash << 5) - hash + str.charCodeAt(i);
+            hash = hash & hash;
+          }
+          return Math.abs(hash);
+        };
+
+        const seed = generateSeed(listingId);
+        const random = (min, max, offset = 0) => {
+          const x = Math.sin(seed + offset) * 10000;
+          return Math.floor(min + (x - Math.floor(x)) * (max - min + 1));
+        };
+
         const mappedData = {
           property: {
             name: listing.title || "Unknown Property",
             price: listing.price_usd || 0,
-            priceDiscount: 0,
-            address: listing.title || "",
-            beds: listing.bedrooms || 0,
-            baths: listing.bathrooms || 0,
-            sqft: 0,
-            petFriendly: listing.pet_dog === true,
+            address: listing.location || "",
+            beds: listing.bedrooms || 1,
+            baths: listing.bathrooms || 1,
+            petFriendly:
+              (listing.amenities &&
+                listing.amenities.includes("Pet Friendly")) ||
+              true,
             aiMatch: Math.round((listing._score || 0) * 100),
-            commuteTime: 0,
-            verified: true,
-            availableNow: true,
             images: images,
-            virtualTour: false,
             description: listing.description || "",
             city: listing.city || "",
             state: listing.state || "",
             neighborhood: listing.neighborhood || "",
-            url: listing.url || "",
-          },
-          company: {
-            name: "Premier Properties",
-            phone: "(555) 234-5678",
-            rating: 4.8,
-            reviewCount: 287,
+            amenities: listing.amenities || [],
+            phone: listing.phone || "",
+            timestamp: listing.timestamp || null,
+            stats: {
+              viewsToday: random(25, 50, 1),
+              toursThisWeek: random(3, 8, 2),
+              walkScore: random(85, 99, 3),
+              transitScore: random(80, 98, 4),
+              safetyRating: (random(80, 95, 5) / 10).toFixed(1),
+              commuteTime: random(12, 25, 6),
+              nearbyGyms: random(2, 7, 7),
+            },
           },
         };
 
@@ -240,20 +330,6 @@ export default function PropertyListing() {
     );
   };
 
-  const goToNextProperty = () => {
-    const index = allListingIds.indexOf(listingId);
-    if (index >= 0 && index < allListingIds.length - 1) {
-      router.push(`/details/${allListingIds[index + 1]}`);
-    }
-  };
-
-  const goToPrevProperty = () => {
-    const index = allListingIds.indexOf(listingId);
-    if (index > 0) {
-      router.push(`/details/${allListingIds[index - 1]}`);
-    }
-  };
-
   if (loading) {
     return <DetailSkeleton />;
   }
@@ -266,10 +342,12 @@ export default function PropertyListing() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             {error ? "Error Loading Listing" : "Listing Not Found"}
           </h2>
-          <p className="text-gray-600 mb-6">{error || "The listing you're looking for doesn't exist."}</p>
+          <p className="text-gray-600 mb-6">
+            {error || "The listing you're looking for doesn't exist."}
+          </p>
           <div className="flex gap-4 justify-center">
             <button
-              onClick={() => router.push('/listing')}
+              onClick={() => router.push("/listing")}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
             >
               Browse All Listings
@@ -288,88 +366,92 @@ export default function PropertyListing() {
     );
   }
 
-  const currentImage = images[currentIndex] || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&h=800&fit=crop';
-  const currentIndexNum = allListingIds.indexOf(listingId);
-  const hasNext = currentIndexNum >= 0 && currentIndexNum < allListingIds.length - 1;
-  const hasPrev = currentIndexNum > 0;
+  const currentImage =
+    images[currentIndex] ||
+    "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&h=800&fit=crop";
+
+  // Calculate previous and next property IDs
+  const currentIndexInList = allListingIds.indexOf(listingId);
+  const prevId =
+    currentIndexInList > 0
+      ? allListingIds[currentIndexInList - 1]
+      : allListingIds[allListingIds.length - 1];
+  const nextId =
+    currentIndexInList < allListingIds.length - 1
+      ? allListingIds[currentIndexInList + 1]
+      : allListingIds[0];
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm px-4 md:px-10 py-4 shadow-sm sticky top-0 z-50 border-b border-gray-100">
+    <div className="text-black min-h-screen bg-gray-50">
+      <header className="bg-white px-10 py-4 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/listing" className="flex items-center gap-3 md:gap-4 group">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/30 transition-all duration-300 group-hover:scale-105">
-              🏢
-            </div>
-            <div className="text-lg md:text-xl font-bold text-gray-900">
-              {data.company.name}
+          <Link href="/listing" className="flex items-center gap-4">
+            <div className="flex justify-centertext-lg flex items-center gap-2">
+              <div className="mt-[-8] text-2xl leading-none">←</div>{" "}
+              <div>Back to Listings</div>
             </div>
           </Link>
-          <Link
-            href="/listing"
-            className="text-sm md:text-base text-gray-600 hover:text-gray-900 font-medium transition"
-          >
-            ← Back to Listings
-          </Link>
+
+          {allListingIds.length > 0 && (
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push(`/details/${prevId}`)}
+                className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
+              >
+                <span className="mt-[-4]">←</span>
+                <span>Previous</span>
+              </button>
+              <button
+                onClick={() => router.push(`/details/${nextId}`)}
+                className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
+              >
+                <span>Next</span>
+                <span className="mt-[-4]">→</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Image Gallery */}
       <div className="bg-white">
-        <div className="relative w-full h-64 md:h-[600px] flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+        <div className="relative w-full h-[600px]">
           {images.length > 0 ? (
             <>
               <img
-                src={(() => {
-                  if (!currentImage || currentImage.includes('unsplash')) return currentImage;
-                  // Add cache buster with listing ID
-                  const separator = currentImage.includes('?') ? '&' : '?';
-                  return `${currentImage}${separator}_main=${listingId?.substring(0, 8)}`;
-                })()}
-                alt={`${data.property.name} - Image ${currentIndex + 1}`}
+                src={currentImage}
+                alt={data.property.name}
                 className="w-full h-full object-cover"
-                loading="eager"
-                key={`main-img-${listingId}-${currentIndex}-${images[currentIndex]?.substring(0, 30) || 'default'}`}
                 onError={(e) => {
-                  const originalUrl = images[currentIndex];
-                  if (originalUrl && !e.target.src.includes('unsplash')) {
-                    e.target.src = originalUrl;
-                  } else {
-                    e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&h=800&fit=crop';
-                  }
+                  e.target.src =
+                    "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&h=800&fit=crop";
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-              
+
               {images.length > 1 && (
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 text-white text-2xl md:text-3xl shadow-lg backdrop-blur-sm transition-all duration-300"
-                    aria-label="Previous image"
+                    className="absolute left-8 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl backdrop-blur-sm transition cursor-pointer flex items-center justify-center"
                   >
                     ←
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 text-white text-2xl md:text-3xl shadow-lg backdrop-blur-sm transition-all duration-300"
-                    aria-label="Next image"
+                    className="absolute right-8 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl backdrop-blur-sm transition cursor-pointer flex items-center justify-center"
                   >
                     →
                   </button>
-                  
+
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                     {images.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentIndex(index)}
-                        className={`w-2 h-2 rounded-full transition-all ${
+                        className={`h-2 rounded-full transition-all ${
                           index === currentIndex
-                            ? 'bg-white w-8'
-                            : 'bg-white/50 hover:bg-white/75'
+                            ? "bg-white w-8"
+                            : "bg-white/50 w-2"
                         }`}
-                        aria-label={`Go to image ${index + 1}`}
                       />
                     ))}
                   </div>
@@ -377,227 +459,351 @@ export default function PropertyListing() {
               )}
             </>
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+            <div className="w-full h-full bg-gradient-to-br from-purple-400 to-indigo-600 flex items-center justify-center text-white">
               <div className="text-center">
-                <div className="text-6xl mb-4">🏠</div>
-                <p className="text-gray-600">No images available</p>
+                <div className="text-6xl mb-4">🏙️</div>
+                <div className="text-2xl">No images available</div>
               </div>
             </div>
           )}
-
-          {/* Navigation Buttons */}
-          <div className="absolute top-4 left-4 flex gap-2">
-            {hasPrev && (
-              <button
-                onClick={goToPrevProperty}
-                className="bg-white/90 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-lg font-semibold shadow-lg hover:bg-white transition text-sm"
-              >
-                ← Previous
-              </button>
-            )}
-            {hasNext && (
-              <button
-                onClick={goToNextProperty}
-                className="bg-white/90 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-lg font-semibold shadow-lg hover:bg-white transition text-sm"
-              >
-                Next →
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* Property Info */}
-        <div className="max-w-7xl mx-auto px-4 md:px-10 py-8 md:py-12">
-          <div className="mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {data.property.name}
-            </h1>
-            {data.property.price > 0 && (
-              <div className="flex flex-wrap items-baseline gap-3 mb-4">
-                <span className="text-5xl md:text-6xl font-bold text-gray-900">
-                  ${data.property.price.toLocaleString()}
-                </span>
-                <span className="text-2xl text-gray-500">/month</span>
-              </div>
-            )}
-            <div className="text-lg md:text-xl text-gray-600 mb-6">
-              {data.property.city && data.property.state ? (
-                <>
-                  {data.property.city}, {data.property.state}
-                  {data.property.neighborhood && <span className="text-gray-400"> • {data.property.neighborhood}</span>}
-                </>
-              ) : (
-                data.property.address
-              )}
+        <div className="max-w-7xl mx-auto px-10 py-8 flex justify-between items-start border-b">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold mb-2">{data.property.name}</h1>
+            <div className="flex items-baseline gap-3 mb-2">
+              <span className="text-5xl font-bold">
+                ${data.property.price.toLocaleString()}
+              </span>
             </div>
-
-            <div className="flex flex-wrap gap-6 mb-6 text-base md:text-lg">
+            <div className="text-lg text-gray-600 mb-5">
+              {data.property.city && data.property.state
+                ? `${data.property.city}, ${data.property.state}`
+                : data.property.address}
+            </div>
+            <div className="flex gap-8 mb-4 text-lg font-medium">
               {data.property.beds > 0 && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <span className="text-xl">🛏️</span>
-                  <span className="font-medium">{data.property.beds} beds</span>
+                <div className="flex items-center gap-2">
+                  <span>🛏️</span>
+                  <span>{data.property.beds} beds</span>
                 </div>
               )}
               {data.property.baths > 0 && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <span className="text-xl">🚿</span>
-                  <span className="font-medium">{data.property.baths} baths</span>
+                <div className="flex items-center gap-2">
+                  <span>🚿</span>
+                  <span>{data.property.baths} baths</span>
                 </div>
               )}
-              {data.property.city && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <span className="text-xl">📍</span>
-                  <span className="font-medium">{data.property.city}</span>
+
+              {data.property.petFriendly && (
+                <div className="flex items-center gap-2">
+                  <span>🐕</span>
+                  <span>Pet friendly</span>
                 </div>
               )}
             </div>
+            {data.property.aiMatch > 0 && (
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-5 py-2 rounded-lg font-semibold">
+                <span>⚡</span>
+                <span>{data.property.aiMatch}% Match for You</span>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-3 items-end">
+            <button
+              onClick={() =>
+                (window.location.href = `tel:${data.property.phone}`)
+              }
+              className="cursor-pointer bg-orange-500 hover:bg-orange-600 text-white px-12 py-4 rounded-xl font-bold text-lg shadow-xl transition"
+            >
+              Contact to Owner
+            </button>
+            <button
+              onClick={() => {
+                window.location.href = "https://wa.me/14155238886";
+              }}
+              className="cursor-pointer bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 px-12 py-3 w-[100%] rounded-xl font-semibold transition"
+            >
+              💬 Text Us
+            </button>
+            <div className="text-sm text-gray-500">
+              ✓ Instant response • Available 24/7
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <div className="flex flex-wrap gap-3 mb-6">
-              {data.property.petFriendly && (
-                <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold border border-blue-100">
-                  🐕 Pet Friendly
-                </span>
-              )}
-              {data.property.availableNow && (
-                <span className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-semibold border border-green-100">
-                  ✓ Available Now
-                </span>
-              )}
-              {data.property.verified && (
-                <span className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-semibold border border-green-100">
-                  ✓ Verified
-                </span>
-              )}
-              {data.property.aiMatch > 0 && (
-                <span className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-semibold border border-indigo-100">
-                  ⚡ {data.property.aiMatch}% Match
-                </span>
-              )}
+      <div className="max-w-7xl mx-auto px-10 py-10">
+        <div className="grid grid-cols-3 gap-10">
+          <div className="col-span-2">
+            <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
+              <h2 className="text-2xl font-bold mb-5">About This Home</h2>
+              <div className="text-gray-700 leading-relaxed mb-6">
+                {data.property.description ||
+                  "Experience modern living in this stunning apartment. This sun-filled residence features floor-to-ceiling windows, an open-concept kitchen with premium appliances, and a private balcony with city views."}
+              </div>
+
+              {/* Feature Points Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-xl">✨</span>
+                  <span>Renovated 2024</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-xl">🌆</span>
+                  <span>City Views</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-xl">🚇</span>
+                  <span>2 blocks to subway</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-xl">🏋️</span>
+                  <span>Building gym & pool</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-xl">🧺</span>
+                  <span>In-unit washer/dryer</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-xl">❄️</span>
+                  <span>Central A/C & heat</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Personalized for You Section */}
+            <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
+              <h2 className="text-2xl font-bold mb-5">
+                🤖 Personalized for You
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
+                  <div className="text-blue-600 font-bold mb-1">
+                    Commute Time
+                  </div>
+                  <div className="text-3xl font-bold">
+                    {data.property.stats.commuteTime || 10} min
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Via public transit
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
+                  <div className="text-blue-600 font-bold mb-1">True Cost</div>
+                  <div className="text-3xl font-bold">
+                    ${(data.property.price + 245).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Rent + utilities + parking
+                  </div>
+                </div>
+                {data.property.aiMatch > 0 && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
+                    <div className="text-blue-600 font-bold mb-1">
+                      Lifestyle Match
+                    </div>
+                    <div className="text-3xl font-bold">
+                      {data.property.aiMatch}%
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Based on your preferences
+                    </div>
+                  </div>
+                )}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
+                  <div className="text-blue-600 font-bold mb-1">
+                    Nearby Gyms
+                  </div>
+                  <div className="text-3xl font-bold">
+                    {data.property.stats.nearbyGyms}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Within 1 mile
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-8">
+              <h2 className="text-2xl font-bold mb-5">Building Amenities</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {renderAmenities(data.property.amenities || []).map(
+                  (amenity, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <span className="text-xl">{amenity.emoji}</span>
+                      <span>{amenity.name}</span>
+                    </div>
+                  )
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Description */}
-          {data.property.description && (
-            <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 mb-8 border border-gray-100">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                About This Property
-              </h2>
-              <div className="text-base md:text-lg leading-relaxed text-gray-700 whitespace-pre-wrap">
-                {data.property.description}
+          <div>
+            {/* Premier Property Contact Card */}
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 mb-6 text-white">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">🏢</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Premier Property</h3>
+                  <div className="text-sm text-blue-100">
+                    4.8 ★ (267 reviews)
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() =>
+                    (window.location.href = "https://wa.me/14155238886")
+                  }
+                  className="cursor-pointer w-full bg-white text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                >
+                  <span>📱</span>
+                  <span>Text: +14155238886</span>
+                </button>
+                <button
+                  onClick={() => (window.location.href = "tel:+14155238886")}
+                  className="cursor-pointer w-full bg-white text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                >
+                  <span>📞</span>
+                  <span>Call Now</span>
+                </button>
+                <button
+                  onClick={() =>
+                    (window.location.href =
+                      "mailto:mathieu@disruptivethoughts.co")
+                  }
+                  className="cursor-pointer w-full bg-white text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                >
+                  <span>✉️</span>
+                  <span>Email Us</span>
+                </button>
               </div>
             </div>
-          )}
 
-          {/* Similar Properties */}
-          {similarPropertiesToShow.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm p-6 md:p-8 border border-gray-100">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
-                Similar Properties
-              </h2>
-              {loadingSimilar ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="bg-gray-100 rounded-xl h-64 animate-pulse" />
+            {/* This Property Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h3 className="font-bold text-lg mb-4">📊 This Property</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-600">Listed</span>
+                  <span className="font-semibold">
+                    {getTimeSinceListed(data.property.timestamp)}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-600">Views</span>
+                  <span className="font-semibold">
+                    {data.property.stats.viewsToday} today
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-600">Tours scheduled</span>
+                  <span className="font-semibold">
+                    {data.property.stats.toursThisWeek} this week
+                  </span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-600">Response time</span>
+                  <span className="font-semibold">Under 1 hour</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Neighborhood Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+              <h3 className="font-bold text-lg mb-4">📍 Neighborhood</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-600">Walk Score</span>
+                  <span className="font-semibold">
+                    {data.property.stats.walkScore}/100
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-gray-600">Transit Score</span>
+                  <span className="font-semibold">
+                    {data.property.stats.transitScore}/100
+                  </span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-600">Safety Rating</span>
+                  <span className="font-semibold">
+                    {data.property.stats.safetyRating}/10
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {loadingSimilar ? (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h3 className="font-bold text-lg mb-4">
+                  Other Available Units
+                </h3>
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="flex gap-4 p-4 bg-gray-50 rounded-lg"
+                    >
+                      <div className="w-20 h-20 flex-shrink-0 rounded-lg bg-gray-200 animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-6 bg-gray-200 rounded w-1/3 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+                      </div>
+                    </div>
                   ))}
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              </div>
+            ) : similarPropertiesToShow.length > 0 ? (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h3 className="font-bold text-lg mb-4">
+                  Other Available Units
+                </h3>
+                <div className="space-y-3">
                   {similarPropertiesToShow.map((prop) => {
-                    const img = prop.images[0] || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&h=400&fit=crop';
+                    const img =
+                      prop.images[0] ||
+                      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=300&fit=crop";
                     return (
                       <div
                         key={prop.id}
                         onClick={() => router.push(`/details/${prop.id}`)}
-                        className="cursor-pointer bg-gray-50 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+                        className="flex gap-4 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition"
                       >
-                        <div className="w-full h-48 md:h-56 relative overflow-hidden bg-gray-200">
+                        <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden">
                           <img
-                            src={(() => {
-                              if (!img || img.includes('unsplash')) return img;
-                              // Add cache buster with property ID to ensure unique URLs
-                              const separator = img.includes('?') ? '&' : '?';
-                              return `${img}${separator}_prop=${prop.id.substring(0, 8)}`;
-                            })()}
-                            alt={`${prop.name} - Property Image`}
-                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                            loading="lazy"
-                            key={`similar-img-${prop.id}-${prop.images?.[0]?.substring(0, 30) || 'default'}`}
+                            src={img}
+                            alt={prop.name}
+                            className="w-full h-full object-cover"
                             onError={(e) => {
-                              const originalUrl = prop.images?.[0];
-                              if (originalUrl && !e.target.src.includes('unsplash')) {
-                                e.target.src = originalUrl;
-                              } else {
-                                e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&h=400&fit=crop';
-                              }
+                              e.target.src =
+                                "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=300&fit=crop";
                             }}
                           />
                         </div>
-                        <div className="p-5">
-                          <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2 line-clamp-1">
-                            {prop.name}
-                          </h3>
-                          <p className="text-gray-500 text-sm mb-3 line-clamp-1">
-                            {prop.address}
-                          </p>
-                          <div className="flex items-center justify-between text-sm text-gray-700">
-                            <div className="flex gap-3">
-                              {prop.beds > 0 && (
-                                <span className="flex items-center gap-1">
-                                  🛏 {prop.beds}
-                                </span>
-                              )}
-                              {prop.baths > 0 && (
-                                <span className="flex items-center gap-1">
-                                  🚿 {prop.baths}
-                                </span>
-                              )}
-                            </div>
-                            {prop.price > 0 && (
-                              <span className="font-bold text-gray-900">
-                                ${prop.price.toLocaleString()}/mo
-                              </span>
-                            )}
+                        <div className="flex-1">
+                          <div className="font-bold text-lg">
+                            ${prop.price.toLocaleString()}/mo
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {prop.beds} bed • {prop.baths} bath •{" "}
+                            {prop.address.substring(0, 30)}...
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Footer CTA */}
-      <div className="bg-gradient-to-br from-gray-50 to-white border-t border-gray-200 py-12 md:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 text-center">
-          <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Interested in this property?
-          </h3>
-          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            Contact us for more information or to schedule a viewing.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href={`tel:${data.company.phone.replace(/\D/g, '')}`}
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 text-base"
-            >
-              📞 Call {data.company.phone}
-            </a>
-            <button className="bg-white text-gray-700 px-8 py-4 rounded-lg font-semibold hover:bg-gray-50 transition border-2 border-gray-200 text-base">
-              💬 Live Chat
-            </button>
-            {data.property.url && (
-              <a
-                href={data.property.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-gray-100 text-gray-700 px-8 py-4 rounded-lg font-semibold hover:bg-gray-200 transition text-base"
-              >
-                🌐 Visit Website
-              </a>
-            )}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
