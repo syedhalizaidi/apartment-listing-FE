@@ -414,7 +414,6 @@ export default function PropertyListings() {
                           <span className="text-4xl md:text-5xl font-bold text-gray-900">
                             ${listing.price.toLocaleString()}
                           </span>
-                          <span className="text-xl text-gray-500">/mo</span>
                         </div>
                       )}
                       <div className="text-base text-gray-600 mb-2">

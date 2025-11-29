@@ -480,7 +480,6 @@ export default function PropertyListing() {
               <span className="text-3xl sm:text-4xl md:text-5xl font-bold">
                 ${data.property.price.toLocaleString()}
               </span>
-              <span className="text-lg sm:text-xl text-gray-500">/mo</span>
             </div>
             <div className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-5">
               {data.property.city && data.property.state
@@ -789,7 +788,7 @@ export default function PropertyListing() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-base sm:text-lg">
-                            ${prop.price.toLocaleString()}/mo
+                            ${prop.price.toLocaleString()}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-600 truncate">
                             {prop.beds} bed • {prop.baths} bath •{" "}
