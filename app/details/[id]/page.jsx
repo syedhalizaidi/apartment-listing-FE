@@ -151,10 +151,10 @@ const getTimeSinceListed = (timestamp) => {
 const DetailSkeleton = () => (
   <div className="min-h-screen bg-gray-50">
     <div className="bg-white">
-      <div className="w-full h-[600px] bg-gray-200 animate-pulse" />
-      <div className="max-w-7xl mx-auto px-10 py-8">
-        <div className="h-8 bg-gray-200 rounded w-3/4 mb-4 animate-pulse" />
-        <div className="h-12 bg-gray-200 rounded w-1/2 mb-4 animate-pulse" />
+      <div className="w-full h-64 md:h-[600px] bg-gray-200 animate-pulse" />
+      <div className="max-w-7xl mx-auto px-4 md:px-10 py-6 md:py-8">
+        <div className="h-6 md:h-8 bg-gray-200 rounded w-3/4 mb-4 animate-pulse" />
+        <div className="h-8 md:h-12 bg-gray-200 rounded w-1/2 mb-4 animate-pulse" />
         <div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse" />
         <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
       </div>
@@ -186,7 +186,7 @@ export default function PropertyListing() {
         const ids = listingsArray.map((i) => i.id);
         setAllListingIds(ids);
       } catch (err) {
-        console.error(err);
+        // Silently fail
       }
     };
     fetchAllIds();
@@ -227,7 +227,7 @@ export default function PropertyListing() {
         const results = (await Promise.all(promises)).filter(Boolean);
         setSimilarPropertiesToShow(results);
       } catch (err) {
-        console.error(err);
+        // Silently fail
       } finally {
         setLoadingSimilar(false);
       }
@@ -336,26 +336,26 @@ export default function PropertyListing() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center px-4">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center max-w-md w-full">
+          <div className="text-4xl sm:text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
             {error ? "Error Loading Listing" : "Listing Not Found"}
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-sm sm:text-base text-gray-600 mb-6">
             {error || "The listing you're looking for doesn't exist."}
           </p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <button
               onClick={() => router.push("/listing")}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base"
             >
               Browse All Listings
             </button>
             {error && (
               <button
                 onClick={() => window.location.reload()}
-                className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
+                className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition text-sm sm:text-base"
               >
                 Retry
               </button>
@@ -383,30 +383,32 @@ export default function PropertyListing() {
 
   return (
     <div className="text-black min-h-screen bg-gray-50">
-      <header className="bg-white px-10 py-4 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/listing" className="flex items-center gap-4">
-            <div className="flex justify-centertext-lg flex items-center gap-2">
-              <div className="mt-[-8] text-2xl leading-none">←</div>{" "}
+      <header className="bg-white px-4 md:px-10 py-3 md:py-4 shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <Link href="/listing" className="flex items-center gap-2 md:gap-4 text-sm md:text-base">
+            <div className="flex items-center gap-2">
+              <div className="text-xl md:text-2xl leading-none">←</div>
               <div>Back to Listings</div>
             </div>
           </Link>
 
           {allListingIds.length > 0 && (
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
               <button
                 onClick={() => router.push(`/details/${prevId}`)}
-                className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
+                className="cursor-pointer flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700 text-sm md:text-base flex-1 sm:flex-initial"
               >
-                <span className="mt-[-4]">←</span>
-                <span>Previous</span>
+                <span>←</span>
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
               </button>
               <button
                 onClick={() => router.push(`/details/${nextId}`)}
-                className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700"
+                className="cursor-pointer flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-semibold text-gray-700 text-sm md:text-base flex-1 sm:flex-initial"
               >
-                <span>Next</span>
-                <span className="mt-[-4]">→</span>
+                <span className="hidden sm:inline">Next</span>
+                <span className="sm:hidden">Next</span>
+                <span>→</span>
               </button>
             </div>
           )}
@@ -414,7 +416,7 @@ export default function PropertyListing() {
       </header>
 
       <div className="bg-white">
-        <div className="relative w-full h-[600px]">
+        <div className="relative w-full h-64 sm:h-80 md:h-[500px] lg:h-[600px]">
           {images.length > 0 ? (
             <>
               <img
@@ -431,27 +433,30 @@ export default function PropertyListing() {
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-8 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl backdrop-blur-sm transition cursor-pointer flex items-center justify-center"
+                    className="absolute left-2 sm:left-4 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 text-white text-xl sm:text-2xl md:text-3xl backdrop-blur-sm transition cursor-pointer flex items-center justify-center"
+                    aria-label="Previous image"
                   >
                     ←
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-8 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-black/40 hover:bg-black/60 text-white text-3xl backdrop-blur-sm transition cursor-pointer flex items-center justify-center"
+                    className="absolute right-2 sm:right-4 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-black/40 hover:bg-black/60 text-white text-xl sm:text-2xl md:text-3xl backdrop-blur-sm transition cursor-pointer flex items-center justify-center"
+                    aria-label="Next image"
                   >
                     →
                   </button>
 
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2">
                     {images.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentIndex(index)}
-                        className={`h-2 rounded-full transition-all ${
+                        className={`h-1.5 sm:h-2 rounded-full transition-all ${
                           index === currentIndex
-                            ? "bg-white w-8"
-                            : "bg-white/50 w-2"
+                            ? "bg-white w-6 sm:w-8"
+                            : "bg-white/50 w-1.5 sm:w-2"
                         }`}
+                        aria-label={`Go to image ${index + 1}`}
                       />
                     ))}
                   </div>
@@ -460,61 +465,62 @@ export default function PropertyListing() {
             </>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-purple-400 to-indigo-600 flex items-center justify-center text-white">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🏙️</div>
-                <div className="text-2xl">No images available</div>
+              <div className="text-center px-4">
+                <div className="text-4xl sm:text-6xl mb-4">🏙️</div>
+                <div className="text-lg sm:text-2xl">No images available</div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="max-w-7xl mx-auto px-10 py-8 flex justify-between items-start border-b">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">{data.property.name}</h1>
-            <div className="flex items-baseline gap-3 mb-2">
-              <span className="text-5xl font-bold">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col lg:flex-row justify-between items-start gap-6 border-b">
+          <div className="flex-1 w-full">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{data.property.name}</h1>
+            <div className="flex items-baseline gap-2 sm:gap-3 mb-2">
+              <span className="text-3xl sm:text-4xl md:text-5xl font-bold">
                 ${data.property.price.toLocaleString()}
               </span>
+              <span className="text-lg sm:text-xl text-gray-500">/mo</span>
             </div>
-            <div className="text-lg text-gray-600 mb-5">
+            <div className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-5">
               {data.property.city && data.property.state
                 ? `${data.property.city}, ${data.property.state}`
                 : data.property.address}
             </div>
-            <div className="flex gap-8 mb-4 text-lg font-medium">
+            <div className="flex flex-wrap gap-4 sm:gap-6 md:gap-8 mb-4 text-base sm:text-lg font-medium">
               {data.property.beds > 0 && (
                 <div className="flex items-center gap-2">
-                  <span>🛏️</span>
+                  <span className="text-lg sm:text-xl">🛏️</span>
                   <span>{data.property.beds} beds</span>
                 </div>
               )}
               {data.property.baths > 0 && (
                 <div className="flex items-center gap-2">
-                  <span>🚿</span>
+                  <span className="text-lg sm:text-xl">🚿</span>
                   <span>{data.property.baths} baths</span>
                 </div>
               )}
 
               {data.property.petFriendly && (
                 <div className="flex items-center gap-2">
-                  <span>🐕</span>
+                  <span className="text-lg sm:text-xl">🐕</span>
                   <span>Pet friendly</span>
                 </div>
               )}
             </div>
             {data.property.aiMatch > 0 && (
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-5 py-2 rounded-lg font-semibold">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 sm:px-5 py-2 rounded-lg font-semibold text-sm sm:text-base">
                 <span>⚡</span>
                 <span>{data.property.aiMatch}% Match for You</span>
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-3 items-end">
+          <div className="flex flex-col gap-3 items-stretch lg:items-end w-full lg:w-auto">
             <button
               onClick={() =>
                 (window.location.href = `tel:${data.property.phone}`)
               }
-              className="cursor-pointer bg-orange-500 hover:bg-orange-600 text-white px-12 py-4 rounded-xl font-bold text-lg shadow-xl transition"
+              className="cursor-pointer bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 md:px-12 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-xl transition w-full lg:w-auto"
             >
               Contact to Owner
             </button>
@@ -522,29 +528,29 @@ export default function PropertyListing() {
               onClick={() => {
                 window.location.href = "https://wa.me/14155238886";
               }}
-              className="cursor-pointer bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 px-12 py-3 w-[100%] rounded-xl font-semibold transition"
+              className="cursor-pointer bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 px-6 sm:px-8 md:px-12 py-3 rounded-xl font-semibold transition w-full lg:w-auto text-sm sm:text-base"
             >
               💬 Text Us
             </button>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs sm:text-sm text-gray-500 text-center lg:text-right">
               ✓ Instant response • Available 24/7
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-10 py-10">
-        <div className="grid grid-cols-3 gap-10">
-          <div className="col-span-2">
-            <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
-              <h2 className="text-2xl font-bold mb-5">About This Home</h2>
-              <div className="text-gray-700 leading-relaxed mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-8 md:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8 mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5">About This Home</h2>
+              <div className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4 sm:mb-6">
                 {data.property.description ||
                   "Experience modern living in this stunning apartment. This sun-filled residence features floor-to-ceiling windows, an open-concept kitchen with premium appliances, and a private balcony with city views."}
               </div>
 
               {/* Feature Points Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <span className="text-xl">✨</span>
                   <span>Renovated 2024</span>
@@ -573,11 +579,11 @@ export default function PropertyListing() {
             </div>
 
             {/* Personalized for You Section */}
-            <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
-              <h2 className="text-2xl font-bold mb-5">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8 mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5">
                 🤖 Personalized for You
               </h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100">
                   <div className="text-blue-600 font-bold mb-1">
                     Commute Time
@@ -616,9 +622,9 @@ export default function PropertyListing() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold mb-5">Building Amenities</h2>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5">Building Amenities</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {renderAmenities(data.property.amenities || []).map(
                   (amenity, index) => (
                     <div
@@ -634,16 +640,16 @@ export default function PropertyListing() {
             </div>
           </div>
 
-          <div>
+          <div className="lg:sticky lg:top-20">
             {/* Premier Property Contact Card */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 mb-6 text-white">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg p-4 sm:p-6 mb-6 text-white">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">🏢</span>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex items-center justify-center">
+                  <span className="text-xl sm:text-2xl">🏢</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Premier Property</h3>
-                  <div className="text-sm text-blue-100">
+                  <h3 className="font-bold text-base sm:text-lg">Premier Property</h3>
+                  <div className="text-xs sm:text-sm text-blue-100">
                     4.8 ★ (267 reviews)
                   </div>
                 </div>
@@ -654,14 +660,15 @@ export default function PropertyListing() {
                   onClick={() =>
                     (window.location.href = "https://wa.me/14155238886")
                   }
-                  className="cursor-pointer w-full bg-white text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                  className="cursor-pointer w-full bg-white text-gray-900 py-2.5 sm:py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   <span>📱</span>
-                  <span>Text: +14155238886</span>
+                  <span className="hidden sm:inline">Text: +14155238886</span>
+                  <span className="sm:hidden">Text Us</span>
                 </button>
                 <button
                   onClick={() => (window.location.href = "tel:+14155238886")}
-                  className="cursor-pointer w-full bg-white text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                  className="cursor-pointer w-full bg-white text-gray-900 py-2.5 sm:py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   <span>📞</span>
                   <span>Call Now</span>
@@ -671,7 +678,7 @@ export default function PropertyListing() {
                     (window.location.href =
                       "mailto:mathieu@disruptivethoughts.co")
                   }
-                  className="cursor-pointer w-full bg-white text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2"
+                  className="cursor-pointer w-full bg-white text-gray-900 py-2.5 sm:py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   <span>✉️</span>
                   <span>Email Us</span>
@@ -680,8 +687,8 @@ export default function PropertyListing() {
             </div>
 
             {/* This Property Section */}
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h3 className="font-bold text-lg mb-4">📊 This Property</h3>
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">📊 This Property</h3>
               <div className="space-y-3">
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-600">Listed</span>
@@ -709,8 +716,8 @@ export default function PropertyListing() {
             </div>
 
             {/* Neighborhood Section */}
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h3 className="font-bold text-lg mb-4">📍 Neighborhood</h3>
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">📍 Neighborhood</h3>
               <div className="space-y-3">
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-600">Walk Score</span>
@@ -734,8 +741,8 @@ export default function PropertyListing() {
             </div>
 
             {loadingSimilar ? (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="font-bold text-lg mb-4">
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+                <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">
                   Other Available Units
                 </h3>
                 <div className="space-y-3">
@@ -754,11 +761,11 @@ export default function PropertyListing() {
                 </div>
               </div>
             ) : similarPropertiesToShow.length > 0 ? (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="font-bold text-lg mb-4">
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+                <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">
                   Other Available Units
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {similarPropertiesToShow.map((prop) => {
                     const img =
                       prop.images[0] ||
@@ -767,9 +774,9 @@ export default function PropertyListing() {
                       <div
                         key={prop.id}
                         onClick={() => router.push(`/details/${prop.id}`)}
-                        className="flex gap-4 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition"
+                        className="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition"
                       >
-                        <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden">
                           <img
                             src={img}
                             alt={prop.name}
@@ -780,13 +787,13 @@ export default function PropertyListing() {
                             }}
                           />
                         </div>
-                        <div className="flex-1">
-                          <div className="font-bold text-lg">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-base sm:text-lg">
                             ${prop.price.toLocaleString()}/mo
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-xs sm:text-sm text-gray-600 truncate">
                             {prop.beds} bed • {prop.baths} bath •{" "}
-                            {prop.address.substring(0, 30)}...
+                            {prop.address.substring(0, 25)}...
                           </div>
                         </div>
                       </div>
