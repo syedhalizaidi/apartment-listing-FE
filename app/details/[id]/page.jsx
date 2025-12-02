@@ -166,7 +166,6 @@ export default function PropertyListing() {
   const params = useParams();
   const listingId = params?.id;
   const router = useRouter();
-
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -174,8 +173,47 @@ export default function PropertyListing() {
   const [allListingIds, setAllListingIds] = useState([]);
   const [similarPropertiesToShow, setSimilarPropertiesToShow] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(true);
+  const [personalized, setPersonalized] = useState("");
 
   const images = data?.property?.images || [];
+
+  useEffect(() => {}, []);
+
+  const generatePersonalizedDescription = async () => {
+    const userQuery = new URLSearchParams(window.location.search)
+      .get("user_query")
+      ?.replace(/ /g, "+");
+    console.log({ userQuery });
+    if (!userQuery) return;
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        `${BASE_URL}/api/v1/listings/personalize-description/${listingId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            user_query: userQuery,
+          }),
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.message || "Failed to personalize");
+      }
+
+      setPersonalized(result.description || "");
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const fetchAllIds = async () => {
@@ -316,6 +354,7 @@ export default function PropertyListing() {
     };
 
     fetchListing();
+    generatePersonalizedDescription();
   }, [listingId]);
 
   const nextImage = () => {
@@ -385,7 +424,10 @@ export default function PropertyListing() {
     <div className="text-black min-h-screen bg-gray-50">
       <header className="bg-white px-4 md:px-10 py-3 md:py-4 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <Link href="/listing" className="flex items-center gap-2 md:gap-4 text-sm md:text-base">
+          <Link
+            href="/listing"
+            className="flex items-center gap-2 md:gap-4 text-sm md:text-base"
+          >
             <div className="flex items-center gap-2">
               <div className="text-xl md:text-2xl leading-none">←</div>
               <div>Back to Listings</div>
@@ -475,7 +517,9 @@ export default function PropertyListing() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-8 flex flex-col lg:flex-row justify-between items-start gap-6 border-b">
           <div className="flex-1 w-full">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{data.property.name}</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
+              {data.property.name}
+            </h1>
             <div className="flex items-baseline gap-2 sm:gap-3 mb-2">
               <span className="text-3xl sm:text-4xl md:text-5xl font-bold">
                 ${data.property.price.toLocaleString()}
@@ -542,10 +586,12 @@ export default function PropertyListing() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8 mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5">About This Home</h2>
-              <div className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4 sm:mb-6">
-                {data.property.description ||
-                  "Experience modern living in this stunning apartment. This sun-filled residence features floor-to-ceiling windows, an open-concept kitchen with premium appliances, and a private balcony with city views."}
+              <h2 className="text-xl sm:text-2xl font-bold mb-4">
+                About This Home
+              </h2>
+
+              <div className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4">
+                {personalized || data.property.description}
               </div>
 
               {/* Feature Points Grid */}
@@ -622,7 +668,9 @@ export default function PropertyListing() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8">
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5">Building Amenities</h2>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5">
+                Building Amenities
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {renderAmenities(data.property.amenities || []).map(
                   (amenity, index) => (
@@ -647,7 +695,9 @@ export default function PropertyListing() {
                   <span className="text-xl sm:text-2xl">🏢</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-base sm:text-lg">Premier Property</h3>
+                  <h3 className="font-bold text-base sm:text-lg">
+                    Premier Property
+                  </h3>
                   <div className="text-xs sm:text-sm text-blue-100">
                     4.8 ★ (267 reviews)
                   </div>
@@ -687,7 +737,9 @@ export default function PropertyListing() {
 
             {/* This Property Section */}
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
-              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">📊 This Property</h3>
+              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">
+                📊 This Property
+              </h3>
               <div className="space-y-3">
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-600">Listed</span>
@@ -716,7 +768,9 @@ export default function PropertyListing() {
 
             {/* Neighborhood Section */}
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
-              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">📍 Neighborhood</h3>
+              <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4">
+                📍 Neighborhood
+              </h3>
               <div className="space-y-3">
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-gray-600">Walk Score</span>
