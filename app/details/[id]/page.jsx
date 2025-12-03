@@ -168,6 +168,7 @@ export default function PropertyListing() {
   const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingDescription, setLoadingDescription] = useState(true);
   const [error, setError] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [allListingIds, setAllListingIds] = useState([]);
@@ -183,8 +184,12 @@ export default function PropertyListing() {
     const userQuery = new URLSearchParams(window.location.search)
       .get("user_query")
       ?.replace(/ /g, "+");
-    console.log({ userQuery });
-    if (!userQuery) return;
+    if (!userQuery) {
+      setLoadingDescription(false);
+      return;
+    }
+    
+    setLoadingDescription(true);
     try {
       setLoading(true);
 
@@ -210,8 +215,10 @@ export default function PropertyListing() {
 
       setPersonalized(result.description || "");
       setLoading(false);
+      setLoadingDescription(false);
     } catch (err) {
       console.error(err);
+      setLoadingDescription(false);
     }
   };
 
@@ -585,42 +592,63 @@ export default function PropertyListing() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-8 md:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 md:p-8 mb-6">
+            <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
               <h2 className="text-xl sm:text-2xl font-bold mb-4">
                 About This Home
               </h2>
+              {loadingDescription ? (
+                <>
+                  <div className="space-y-3 mb-6">
+                    <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4">
+                    {personalized || data.property.description}
+                  </div>
 
-              <div className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4">
-                {personalized || data.property.description}
-              </div>
-
-              {/* Feature Points Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className="text-xl">✨</span>
-                  <span>Renovated 2024</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className="text-xl">🌆</span>
-                  <span>City Views</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className="text-xl">🚇</span>
-                  <span>2 blocks to subway</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className="text-xl">🏋️</span>
-                  <span>Building gym & pool</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className="text-xl">🧺</span>
-                  <span>In-unit washer/dryer</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className="text-xl">❄️</span>
-                  <span>Central A/C & heat</span>
-                </div>
-              </div>
+                  {/* Feature Points Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xl">✨</span>
+                      <span>Renovated 2024</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xl">🌆</span>
+                      <span>City Views</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xl">🚇</span>
+                      <span>2 blocks to subway</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xl">🏋️</span>
+                      <span>Building gym & pool</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xl">🧺</span>
+                      <span>In-unit washer/dryer</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xl">❄️</span>
+                      <span>Central A/C & heat</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Personalized for You Section */}
@@ -841,11 +869,11 @@ export default function PropertyListing() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-base sm:text-lg">
-                            ${prop.price.toLocaleString()}
+                          <div className="text-base font-semibold text-sm">
+                            {prop.name}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-600 truncate">
-                            {prop.beds} bed • {prop.baths} bath •{" "}
+                            {prop.beds || 1} bed • {prop.baths || 1} bath •{" "}
                             {prop.address.substring(0, 25)}...
                           </div>
                         </div>
