@@ -4,6 +4,18 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BASE_URL } from "../constants/constants";
 
+// Utility function to extract numeric price from various formats
+const extractPrice = (priceStr) => {
+  if (!priceStr) return { price: 0, hasStartingFrom: false };
+  const str = String(priceStr).toLowerCase();
+  const hasStartingFrom = str.includes("starting from");
+  const match = str.match(/\d+/);
+  return {
+    price: match ? parseInt(match[0], 10) : 0,
+    hasStartingFrom,
+  };
+};
+
 // Loading Skeleton Component
 const ListingSkeleton = () => (
   <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col md:flex-row animate-pulse">
@@ -38,7 +50,7 @@ export default function PropertyListings() {
       try {
         const res = await fetch(`${BASE_URL}/api/v1/listings/all`, {
           headers: {
-            'Accept': 'application/json',
+            Accept: "application/json",
           },
         });
 
@@ -49,16 +61,16 @@ export default function PropertyListings() {
         const data = await res.json();
 
         // API returns a direct array, not an object
-        const listingsArray = Array.isArray(data) ? data : (data.listings || []);
-        
+        const listingsArray = Array.isArray(data) ? data : data.listings || [];
+
         // Helper function to parse images
         const parseImages = (imagesData) => {
           if (!imagesData) return [];
-          
+
           if (Array.isArray(imagesData)) {
             const allUrls = [];
             imagesData.forEach((item) => {
-              if (typeof item === 'string') {
+              if (typeof item === "string") {
                 try {
                   const parsed = JSON.parse(item);
                   if (Array.isArray(parsed)) {
@@ -68,27 +80,33 @@ export default function PropertyListings() {
                   }
                 } catch (e) {
                   const cleaned = item.trim();
-                  if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+                  if (cleaned.startsWith("[") && cleaned.endsWith("]")) {
                     // Parse Python-style string array
                     // URLs can contain commas, so we need to match URLs properly
                     const inner = cleaned.slice(1, -1);
-                    
+
                     // Match URLs: http:// or https:// followed by characters until quote, space, or end
                     // This handles commas within URLs (like in query params)
                     const urlPattern = /https?:\/\/[^'"]+/g;
                     const urls = inner.match(urlPattern);
-                    
+
                     if (urls && urls.length > 0) {
                       // Clean up any remaining quotes and whitespace
-                      const cleanedUrls = urls.map(url => {
-                        let cleaned = url.trim();
-                        // Remove quotes from start/end if present
-                        cleaned = cleaned.replace(/^['"]+|['"]+$/g, '');
-                        // Remove trailing commas if any
-                        cleaned = cleaned.replace(/,\s*$/, '');
-                        return cleaned;
-                      }).filter(url => url.startsWith('http://') || url.startsWith('https://'));
-                      
+                      const cleanedUrls = urls
+                        .map((url) => {
+                          let cleaned = url.trim();
+                          // Remove quotes from start/end if present
+                          cleaned = cleaned.replace(/^['"]+|['"]+$/g, "");
+                          // Remove trailing commas if any
+                          cleaned = cleaned.replace(/,\s*$/, "");
+                          return cleaned;
+                        })
+                        .filter(
+                          (url) =>
+                            url.startsWith("http://") ||
+                            url.startsWith("https://")
+                        );
+
                       if (cleanedUrls.length > 0) {
                         allUrls.push(...cleanedUrls);
                       }
@@ -99,19 +117,22 @@ export default function PropertyListings() {
                     const urlMatches = item.match(urlPattern);
                     if (urlMatches && urlMatches.length > 0) {
                       allUrls.push(...urlMatches);
-                    } else if (item.startsWith('http://') || item.startsWith('https://')) {
+                    } else if (
+                      item.startsWith("http://") ||
+                      item.startsWith("https://")
+                    ) {
                       allUrls.push(item);
                     }
                   }
                 }
-              } else if (typeof item === 'object' && item !== null) {
+              } else if (typeof item === "object" && item !== null) {
                 allUrls.push(item);
               }
             });
             return allUrls;
           }
-          
-          if (typeof imagesData === 'string') {
+
+          if (typeof imagesData === "string") {
             try {
               const parsed = JSON.parse(imagesData);
               return Array.isArray(parsed) ? parsed : [imagesData];
@@ -122,25 +143,27 @@ export default function PropertyListings() {
               return urlMatches || [];
             }
           }
-          
+
           return [];
         };
 
         // Map API fields to component fields
         const mappedListings = listingsArray.map((listing) => {
           const images = parseImages(listing.images);
+          const priceData = extractPrice(listing.price_usd);
 
           return {
             id: listing.id,
-            title: listing.title || '',
-            price: listing.price_usd || 0,
+            title: listing.title || "",
+            price: priceData.price,
+            hasStartingFrom: priceData.hasStartingFrom,
             beds: listing.bedrooms || 0,
             baths: listing.bathrooms || 0,
             sqft: 0,
             image_urls: images,
-            address: listing.title || '',
-            neighborhood: listing.neighborhood || '',
-            city: listing.city || '',
+            address: listing.title || "",
+            neighborhood: listing.neighborhood || "",
+            city: listing.city || "",
             petFriendly: listing.pet_dog === true,
             aiMatch: Math.round((listing._score || 0) * 100),
             availableNow: true,
@@ -150,11 +173,10 @@ export default function PropertyListings() {
             commuteTime: 0,
             amenities: [],
             virtualTour: false,
-            description: listing.description || '',
-            url: listing.url || '',
+            description: listing.description || "",
+            url: listing.url || "",
           };
         });
-
 
         setListings(mappedListings);
         setTotalPages(1);
@@ -206,9 +228,12 @@ export default function PropertyListings() {
     reviewCount: 287,
   };
 
-  const avgRent = listings.length > 0
-    ? Math.round(listings.reduce((sum, l) => sum + (l.price || 0), 0) / listings.length)
-    : 0;
+  const avgRent =
+    listings.length > 0
+      ? Math.round(
+          listings.reduce((sum, l) => sum + (l.price || 0), 0) / listings.length
+        )
+      : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -245,9 +270,13 @@ export default function PropertyListings() {
               <span className="inline-block h-6 w-48 bg-white/20 rounded animate-pulse" />
             ) : (
               <>
-                Discover <span className="font-semibold">{total}</span> premium properties
+                Discover <span className="font-semibold">{total}</span> premium
+                properties
                 {filteredListings.length !== total && (
-                  <span> ({filteredListings.length} matching your filters)</span>
+                  <span>
+                    {" "}
+                    ({filteredListings.length} matching your filters)
+                  </span>
                 )}
               </>
             )}
@@ -256,17 +285,30 @@ export default function PropertyListings() {
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 md:px-6 md:py-4 rounded-xl border border-white/20">
               <div className="text-xs md:text-sm opacity-80 mb-1">Avg Rent</div>
               <div className="text-xl md:text-3xl font-bold">
-                ${loading ? <span className="inline-block h-8 w-20 bg-white/20 rounded animate-pulse" /> : avgRent.toLocaleString()}
+                $
+                {loading ? (
+                  <span className="inline-block h-8 w-20 bg-white/20 rounded animate-pulse" />
+                ) : (
+                  avgRent.toLocaleString()
+                )}
               </div>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 md:px-6 md:py-4 rounded-xl border border-white/20">
-              <div className="text-xs md:text-sm opacity-80 mb-1">Response Time</div>
+              <div className="text-xs md:text-sm opacity-80 mb-1">
+                Response Time
+              </div>
               <div className="text-xl md:text-3xl font-bold">1 Hour</div>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 md:px-6 md:py-4 rounded-xl border border-white/20">
-              <div className="text-xs md:text-sm opacity-80 mb-1">Pet Friendly</div>
+              <div className="text-xs md:text-sm opacity-80 mb-1">
+                Pet Friendly
+              </div>
               <div className="text-xl md:text-3xl font-bold">
-                {loading ? <span className="inline-block h-8 w-12 bg-white/20 rounded animate-pulse" /> : listings.filter((l) => l.petFriendly).length}
+                {loading ? (
+                  <span className="inline-block h-8 w-12 bg-white/20 rounded animate-pulse" />
+                ) : (
+                  listings.filter((l) => l.petFriendly).length
+                )}
               </div>
             </div>
           </div>
@@ -311,7 +353,9 @@ export default function PropertyListings() {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 whitespace-nowrap">Sort by:</span>
+              <span className="text-sm text-gray-600 whitespace-nowrap">
+                Sort by:
+              </span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -338,7 +382,9 @@ export default function PropertyListings() {
         ) : error ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">⚠️</div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Listings</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Error Loading Listings
+            </h3>
             <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
@@ -350,7 +396,9 @@ export default function PropertyListings() {
         ) : filteredListings.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🏠</div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">No properties found</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              No properties found
+            </h3>
             <p className="text-gray-600 mb-6">Try adjusting your filters</p>
             <button
               onClick={() => setFilter("all")}
@@ -366,26 +414,36 @@ export default function PropertyListings() {
                 key={listing.id}
                 className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100"
               >
-                <Link href={`/details/${listing.id}`} className="flex flex-col md:flex-row">
+                <Link
+                  href={`/details/${listing.id}`}
+                  className="flex flex-col md:flex-row"
+                >
                   <div className="w-full md:w-96 lg:w-[400px] h-64 md:h-auto md:min-h-[320px] flex-shrink-0 relative overflow-hidden bg-gray-100">
                     <img
                       src={(() => {
                         const imgUrl = listing.image_urls?.[0];
-                        if (!imgUrl) return 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop';
+                        if (!imgUrl)
+                          return "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop";
                         // Add cache buster with listing ID to ensure unique URLs
-                        const separator = imgUrl.includes('?') ? '&' : '?';
-                        return `${imgUrl}${separator}_listing=${listing.id.substring(0, 8)}`;
+                        const separator = imgUrl.includes("?") ? "&" : "?";
+                        return `${imgUrl}${separator}_listing=${listing.id.substring(
+                          0,
+                          8
+                        )}`;
                       })()}
                       alt={`${listing.title} - Property Image`}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       loading="lazy"
-                      key={`img-${listing.id}-${listing.image_urls?.[0]?.substring(0, 30) || 'default'}-${listing.image_urls?.length || 0}`}
+                      key={`img-${listing.id}-${
+                        listing.image_urls?.[0]?.substring(0, 30) || "default"
+                      }-${listing.image_urls?.length || 0}`}
                       onError={(e) => {
                         const originalUrl = listing.image_urls?.[0];
-                        if (originalUrl && !e.target.src.includes('unsplash')) {
+                        if (originalUrl && !e.target.src.includes("unsplash")) {
                           e.target.src = originalUrl;
                         } else {
-                          e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop';
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop";
                         }
                       }}
                     />
@@ -411,16 +469,28 @@ export default function PropertyListings() {
                       </h2>
                       {listing.price > 0 && (
                         <div className="flex flex-wrap items-baseline gap-2 mb-3">
-                          <span className="text-4xl md:text-5xl font-bold text-gray-900">
-                            ${listing.price.toLocaleString()}
-                          </span>
+                          <div className="flex flex-col">
+                            {listing.hasStartingFrom && (
+                              <span className="text-sm text-gray-500 mt-1">
+                                Starting from
+                              </span>
+                            )}
+                            <span className="text-4xl md:text-5xl font-bold text-gray-900">
+                              ${listing.price.toLocaleString()}
+                            </span>
+                          </div>
                         </div>
                       )}
                       <div className="text-base text-gray-600 mb-2">
                         {listing.city ? (
                           <>
                             {listing.city}
-                            {listing.neighborhood && <span className="text-gray-400"> • {listing.neighborhood}</span>}
+                            {listing.neighborhood && (
+                              <span className="text-gray-400">
+                                {" "}
+                                • {listing.neighborhood}
+                              </span>
+                            )}
                           </>
                         ) : (
                           listing.title
@@ -437,13 +507,17 @@ export default function PropertyListings() {
                       {listing.beds > 0 && (
                         <div className="flex items-center gap-2 text-gray-700">
                           <span className="text-lg">🛏️</span>
-                          <span className="font-medium">{listing.beds} beds</span>
+                          <span className="font-medium">
+                            {listing.beds} beds
+                          </span>
                         </div>
                       )}
                       {listing.baths > 0 && (
                         <div className="flex items-center gap-2 text-gray-700">
                           <span className="text-lg">🚿</span>
-                          <span className="font-medium">{listing.baths} baths</span>
+                          <span className="font-medium">
+                            {listing.baths} baths
+                          </span>
                         </div>
                       )}
                       {listing.city && (
@@ -470,7 +544,9 @@ export default function PropertyListings() {
                     <div className="mt-auto">
                       <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/40">
                         View Details
-                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                        <span className="group-hover:translate-x-1 transition-transform">
+                          →
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -522,11 +598,12 @@ export default function PropertyListings() {
               Need help finding a home?
             </h3>
             <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-              Our team is here to assist you 24/7. Get personalized recommendations and expert guidance.
+              Our team is here to assist you 24/7. Get personalized
+              recommendations and expert guidance.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href={`tel:${company.phone.replace(/\D/g, '')}`}
+                href={`tel:${company.phone.replace(/\D/g, "")}`}
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 text-base"
               >
                 📞 Call {company.phone}
@@ -541,4 +618,3 @@ export default function PropertyListings() {
     </div>
   );
 }
-

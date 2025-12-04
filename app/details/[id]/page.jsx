@@ -77,6 +77,18 @@ const parseImages = (imagesData) => {
   return [];
 };
 
+// Utility function to extract numeric price from various formats
+const extractPrice = (priceStr) => {
+  if (!priceStr) return { price: 0, hasStartingFrom: false };
+  const str = String(priceStr).toLowerCase();
+  const hasStartingFrom = str.includes('starting from');
+  const match = str.match(/\d+/);
+  return {
+    price: match ? parseInt(match[0], 10) : 0,
+    hasStartingFrom
+  };
+};
+
 const REQUIRED_AMENITIES = [
   "parking",
   "garden",
@@ -255,10 +267,12 @@ export default function PropertyListing() {
             const listing = await res.json();
             const images = parseImages(listing.images);
 
+            const priceData = extractPrice(listing.price_usd);
             return {
               id: listing.id,
               name: listing.title || "Unknown Property",
-              price: listing.price_usd || 0,
+              price: priceData.price,
+              hasStartingFrom: priceData.hasStartingFrom,
               beds: listing.bedrooms || 0,
               baths: listing.bathrooms || 0,
               address: listing.title || "",
@@ -320,10 +334,12 @@ export default function PropertyListing() {
           return Math.floor(min + (x - Math.floor(x)) * (max - min + 1));
         };
 
+        const priceData = extractPrice(listing.price_usd);
         const mappedData = {
           property: {
             name: listing.title || "Unknown Property",
-            price: listing.price_usd || 0,
+            price: priceData.price,
+            hasStartingFrom: priceData.hasStartingFrom,
             address: listing.location || "",
             beds: listing.bedrooms || 1,
             baths: listing.bathrooms || 1,
@@ -528,9 +544,16 @@ export default function PropertyListing() {
               {data.property.name}
             </h1>
             <div className="flex items-baseline gap-2 sm:gap-3 mb-2">
-              <span className="text-3xl sm:text-4xl md:text-5xl font-bold">
-                ${data.property.price.toLocaleString()}
-              </span>
+              <div className="flex flex-col">
+                {data.property.hasStartingFrom && (
+                  <span className="text-sm text-gray-500 mt-1">
+                    Starting from
+                  </span>
+                )}
+                <span className="text-3xl sm:text-4xl md:text-5xl font-bold">
+                  ${data.property.price.toLocaleString()}
+                </span>
+              </div>
             </div>
             <div className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-5">
               {data.property.city && data.property.state
